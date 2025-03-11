@@ -70,7 +70,7 @@ export default function SignInForm() {
         </form>
 
         <div className="mt-6 text-center text-white text-sm">
-          New to Gatherly?{' '}
+          New to Data Station?{' '}
           <Link href="auth/signup" className="text-[#03b3d7] underline">
             Sign Up
           </Link>
