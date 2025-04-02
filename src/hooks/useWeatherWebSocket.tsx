@@ -18,7 +18,8 @@ const useWeatherWebSocket = (url: string) => {
     socket.onmessage = (event) => {
       try {
         const newData = JSON.parse(event.data);
-        console.log("🌍 Incoming Data:", newData);
+        // console.log("🌍 Incoming Data:", newData);
+        console.log("🌍 Incoming Data:");
 
         const city = newData.location || "Unknown";
 

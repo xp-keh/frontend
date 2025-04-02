@@ -1,22 +1,25 @@
-'use client';
+"use client";
 
-import { signin } from '@/actions/auth';
-import { useActionState } from 'react'
-import Link from 'next/link';
+import { signin } from "@/actions/auth";
+import { useActionState } from "react";
+import Link from "next/link";
 
 export default function SignInForm() {
-  const [state, action, pending] = useActionState(signin, undefined)
+  const [state, action, pending] = useActionState(signin, undefined);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#030c14] p-4">
       <div className="relative bg-[#171b21] border border-neutral-700 rounded-[20px] w-full max-w-md p-8 shadow-xl">
-
-        <h2 className="text-white text-[32px] font-semibold text-center mb-6 mt-8">Data Station</h2>
+        <h2 className="text-white text-[32px] font-semibold text-center mb-6 mt-8">
+          Data Station
+        </h2>
 
         <form action={action} className="space-y-6">
-
           <div>
-            <label htmlFor="username" className="block text-white text-lg font-semibold mb-2">
+            <label
+              htmlFor="username"
+              className="block text-white text-lg font-semibold mb-2"
+            >
               Username
             </label>
             <input
@@ -30,7 +33,10 @@ export default function SignInForm() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-white text-lg font-semibold mb-2">
+            <label
+              htmlFor="password"
+              className="block text-white text-lg font-semibold mb-2"
+            >
               Password
             </label>
             <input
@@ -70,7 +76,7 @@ export default function SignInForm() {
         </form>
 
         <div className="mt-6 text-center text-white text-sm">
-          New to Data Station?{' '}
+          New to Data Station?{" "}
           <Link href="auth/signup" className="text-[#03b3d7] underline">
             Sign Up
           </Link>

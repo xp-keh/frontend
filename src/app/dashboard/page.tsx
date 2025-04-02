@@ -1,96 +1,31 @@
-// "use client";
-// import { useState } from "react";
-// import Navbar from "../../components/Navbar";
-// import useWeatherWebSocket from "../../hooks/useWeatherWebSocket";
-// import "../globals.css";
-
-// const Dashboard = () => {
-//   const { weatherData, error } = useWeatherWebSocket(
-//     "ws://85.209.163.202:8012/ws"
-//   );
-//   const cities = Object.keys(weatherData);
-//   const [selectedCity, setSelectedCity] = useState(cities[0] || "");
-
-//   return (
-//     <div className="min-h-screen bg-gray-100">
-//       <Navbar />
-//       <div className="p-4 flex justify-center">
-//         {cities.length > 0 && (
-//           <select
-//             className="p-2 border rounded-lg bg-white shadow-md text-black"
-//             value={selectedCity}
-//             onChange={(e) => setSelectedCity(e.target.value)}
-//           >
-//             {cities.map((city) => (
-//               <option key={city} value={city}>
-//                 {city}
-//               </option>
-//             ))}
-//           </select>
-//         )}
-//       </div>
-
-//       <div className="grid grid-cols-3 grid-rows-3 gap-10 p-8 h-screen rounded">
-//         <div className="col-span-2 row-span-2 bg-gray-300 rounded-lg flex items-center justify-center">
-//           <p className="text-gray-700">[ Map Placeholder ]</p>
-//         </div>
-
-//         {selectedCity && weatherData[selectedCity] ? (
-//           <>
-//             <div className="bg-customBlue text-white p-4 rounded-lg">
-//               <h3 className="text-lg font-semibold">Temperature</h3>
-//               <p className="text-2xl">
-//                 {((weatherData[selectedCity]?.temp as number) - 273.15).toFixed(
-//                   2
-//                 )}{" "}
-//                 °C
-//               </p>
-//             </div>
-//             <div className="bg-customBlue text-white p-4 rounded-2xl flex flex-col justify-center">
-//               <h3 className="text-lg font-semibold">Humidity</h3>
-//               <p className="text-2xl">{weatherData[selectedCity].humidity} %</p>
-//             </div>
-//             <div className="bg-customBlue text-white p-4 rounded-2xl flex flex-col justify-center">
-//               <h3 className="text-lg font-semibold">Wind Speed</h3>
-//               <p className="text-2xl">
-//                 {weatherData[selectedCity].wind_speed} m/s
-//               </p>
-//             </div>
-//             <div className="bg-customBlue text-white p-4 rounded-2xl flex flex-col justify-center">
-//               <h3 className="text-lg font-semibold">Clouds</h3>
-//               <p className="text-2xl">
-//                 {weatherData[selectedCity].clouds} oktas
-//               </p>
-//             </div>
-//             <div className="bg-customBlue text-white p-4 rounded-2xl flex flex-col justify-center">
-//               <h3 className="text-lg font-semibold">Description</h3>
-//               <p className="text-2xl capitalize">
-//                 {weatherData[selectedCity].description}
-//               </p>
-//             </div>
-//           </>
-//         ) : (
-//           <p className="text-gray-700 col-span-3 text-center">
-//             Waiting for data...
-//           </p>
-//         )}
-//       </div>
-
-//       {error && <p className="text-red-500 text-center mt-4">{error}</p>}
-//     </div>
-//   );
-// };
-
-// export default Dashboard;
-
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "../../components/Navbar";
 import useWeatherWebSocket from "../../hooks/useWeatherWebSocket";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from "leaflet";
+import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
 import "../globals.css";
+
+const MapContainer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.MapContainer),
+  { ssr: false }
+);
+const TileLayer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.TileLayer),
+  { ssr: false }
+);
+const Marker = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Marker),
+  { ssr: false }
+);
+const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
+  ssr: false,
+});
+
+let L: any;
+if (typeof window !== "undefined") {
+  L = require("leaflet");
+}
 
 const locations = [
   { name: "Kretek", lat: -7.9923, lon: 110.2973 },
@@ -100,24 +35,32 @@ const locations = [
   { name: "Bantul", lat: -7.875, lon: 110.3268 },
 ];
 
-const locationIcon = L.icon({
-  iconUrl: "/location-pin.png",
-  iconSize: [30, 30],
-  iconAnchor: [15, 30],
-  popupAnchor: [0, -30],
-});
-
 const Dashboard = () => {
   const { weatherData, error } = useWeatherWebSocket(
     "ws://85.209.163.202:8012/ws"
   );
   const [selectedCity, setSelectedCity] = useState(locations[0].name);
 
+  const [locationIcon, setLocationIcon] = useState<any>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setLocationIcon(
+        L.icon({
+          iconUrl: "/location-pin.png",
+          iconSize: [30, 30],
+          iconAnchor: [15, 30],
+          popupAnchor: [0, -30],
+        })
+      );
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
 
-      <div className="grid grid-cols-3 grid-rows-3 gap-4 p-8 h-screen">
+      <div className="grid grid-cols-3 grid-rows-3 gap-10 p-8 h-screen">
         <div className="col-span-2 row-span-2 bg-gray-300 rounded-lg flex items-center justify-center">
           <MapContainer
             center={[-7.9, 110.3]}
@@ -140,7 +83,7 @@ const Dashboard = () => {
 
         {selectedCity && weatherData[selectedCity] ? (
           <>
-            <div className="bg-customBlue text-white p-4 rounded-2xl flex flex-col justify-center">
+            <div className="bg-customBlue text-white p-4 rounded-lg">
               <h3 className="text-lg font-semibold">
                 {selectedCity} - Temperature
               </h3>

@@ -6,7 +6,7 @@ const App = () => {
   const router = useRouter();
 
   useEffect(() => {
-    router.push("/");
+    router.push("/dashboard");
   }, []);
 
   return null;
