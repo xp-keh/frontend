@@ -83,7 +83,7 @@ const Dashboard = () => {
 
         {selectedCity && weatherData[selectedCity] ? (
           <>
-            <div className="bg-customBlue text-white p-4 rounded-lg">
+            <div className="bg-chartGray text-white p-4 rounded-lg">
               <h3 className="text-lg font-semibold">
                 {selectedCity} - Temperature
               </h3>
@@ -94,11 +94,11 @@ const Dashboard = () => {
                 °C
               </p>
             </div>
-            <div className="bg-customBlue text-white p-4 rounded-2xl flex flex-col justify-center">
+            <div className="bg-chartGray text-white p-4 rounded-2xl flex flex-col justify-center">
               <h3 className="text-lg font-semibold">Humidity</h3>
               <p className="text-2xl">{weatherData[selectedCity].humidity} %</p>
             </div>
-            <div className="bg-customBlue text-white p-4 rounded-2xl flex flex-col justify-center">
+            <div className="bg-chartGray text-white p-4 rounded-2xl flex flex-col justify-center">
               <h3 className="text-lg font-semibold">Wind Speed</h3>
               <p className="text-2xl">
                 {weatherData[selectedCity].wind_speed} m/s
@@ -114,13 +114,13 @@ const Dashboard = () => {
                 {weatherData[selectedCity].wind_gust} m/s
               </p>
             </div>
-            <div className="bg-customBlue text-white p-4 rounded-2xl flex flex-col justify-center">
+            <div className="bg-chartGray text-white p-4 rounded-2xl flex flex-col justify-center">
               <h3 className="text-lg font-semibold">Clouds</h3>
               <p className="text-2xl">
                 {weatherData[selectedCity].clouds} oktas
               </p>
             </div>
-            <div className="bg-customBlue text-white p-4 rounded-2xl flex flex-col justify-center">
+            <div className="bg-chartGray text-white p-4 rounded-2xl flex flex-col justify-center">
               <h3 className="text-lg font-semibold">Description</h3>
               <p className="text-2xl capitalize">
                 {weatherData[selectedCity].description}

@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import { useEffect, useState } from "react";
 
-const TemperatureChart = ({ selectedCity }: { selectedCity: string }) => {
+const HumidityChart = ({ selectedCity }: { selectedCity: string }) => {
   const [chartData, setChartData] = useState<any[]>([]);
 
   useEffect(() => {
@@ -27,7 +27,7 @@ const TemperatureChart = ({ selectedCity }: { selectedCity: string }) => {
           .filter((entry: any) => entry.location === selectedCity)
           .map((entry: any) => ({
             time: entry.dt * 1000,
-            temperature: (entry.temp - 273.15).toFixed(2),
+            hum: entry.humidity,
           }));
 
         setChartData(cityData);
@@ -101,7 +101,6 @@ const TemperatureChart = ({ selectedCity }: { selectedCity: string }) => {
         <YAxis
           domain={["auto", "auto"]}
           stroke="white"
-          tickFormatter={(tick) => tick.toFixed(2)}
           tick={{
             fontSize: 12,
             fill: "white",
@@ -128,7 +127,7 @@ const TemperatureChart = ({ selectedCity }: { selectedCity: string }) => {
         />
         <Line
           type="monotone"
-          dataKey="temperature"
+          dataKey="hum"
           stroke="white"
           strokeWidth={0.5}
           dot={false}
@@ -138,4 +137,4 @@ const TemperatureChart = ({ selectedCity }: { selectedCity: string }) => {
   );
 };
 
-export default TemperatureChart;
+export default HumidityChart;
