@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import { useEffect, useState } from "react";
 
-const TemperatureChart = ({ selectedCity }: { selectedCity: string }) => {
+const WindChart = ({ selectedCity }: { selectedCity: string }) => {
   const [chartData, setChartData] = useState<any[]>([]);
 
   useEffect(() => {
@@ -23,13 +23,17 @@ const TemperatureChart = ({ selectedCity }: { selectedCity: string }) => {
 
         const dataArray = rawData.weather_data || [];
 
+        const now = Date.now();
+        const last24Hours = now - 24 * 60 * 60 * 1000;
+
         const cityData = dataArray
           .filter((entry: any) => entry.location === selectedCity)
           .map((entry: any) => ({
             time: entry.dt * 1000,
-            temperature: (entry.temp - 273.15).toFixed(1),
-          }));
-
+            speed: entry.wind_speed,
+            gust: entry.wind_gust,
+          }))
+          .filter((entry: { time: number }) => entry.time >= last24Hours);
         setChartData(cityData);
       } catch (error) {
         console.error("Error fetching weather data:", error);
@@ -42,36 +46,19 @@ const TemperatureChart = ({ selectedCity }: { selectedCity: string }) => {
   const generateFixedLabels = () => {
     const now = new Date();
     const todayStr = now.toISOString().split("T")[0];
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split("T")[0];
 
-    const fixedTimes = [
-      "00:00",
-      "06:00",
-      "12:00",
-      "18:00",
-      "00:00",
-      "06:00",
-      "12:00",
-      "18:00",
-    ];
-    const fixedTimestamps = fixedTimes.map((time, index) => {
-      const isYesterday = index < 4;
-      const dateStr = isYesterday ? yesterdayStr : todayStr;
-      return {
-        timestamp: new Date(`${dateStr}T${time}:00`).getTime(),
-        label: `${isYesterday ? "" : ""}\n${time}`,
-      };
-    });
+    const fixedTimes = ["00:00", "06:00", "12:00", "18:00"];
 
-    return fixedTimestamps;
+    return fixedTimes.map((time) => ({
+      timestamp: new Date(`${todayStr}T${time}:00`).getTime(),
+      label: time,
+    }));
   };
 
   const fixedLabels = generateFixedLabels();
 
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height="80%">
       <LineChart
         data={chartData}
         margin={{ left: -20, right: 10, top: 20, bottom: 10 }}
@@ -128,8 +115,15 @@ const TemperatureChart = ({ selectedCity }: { selectedCity: string }) => {
         />
         <Line
           type="monotone"
-          dataKey="temperature"
-          stroke="white"
+          dataKey="speed"
+          stroke="blue"
+          strokeWidth={0.5}
+          dot={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="gust"
+          stroke="red"
           strokeWidth={0.5}
           dot={false}
         />
@@ -138,4 +132,4 @@ const TemperatureChart = ({ selectedCity }: { selectedCity: string }) => {
   );
 };
 
-export default TemperatureChart;
+export default WindChart;

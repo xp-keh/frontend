@@ -6,6 +6,8 @@ import Navbar from "../../components/Navbar";
 import useWeatherWebSocket from "../../hooks/useWeatherWebSocket";
 import TemperatureChart from "../../components/TemperatureChart";
 import HumidityChart from "../../components/HumidityChart";
+import WindChart from "../../components/WindChart";
+import WindDirectionChart from "../../components/WindDirectionChart";
 
 const WeatherDashboard = () => {
   const { weatherData, error } = useWeatherWebSocket(
@@ -61,7 +63,7 @@ const WeatherDashboard = () => {
                 <p className="text-md">
                   {(
                     (weatherData[selectedCity]?.temp as number) - 273.15
-                  ).toFixed(2)}{" "}
+                  ).toFixed(1)}{" "}
                   °C
                 </p>
               </div>
@@ -78,25 +80,33 @@ const WeatherDashboard = () => {
               <h3 className="text-sm">Last 2 days</h3>
               <HumidityChart selectedCity={selectedCity} />
             </div>
-            <div className="bg-chartGray text-white p-4 rounded-2xl flex flex-col justify-center">
-              <h3 className="text-lg font-semibold">Wind Speed</h3>
-              <p className="text-2xl">
-                {weatherData[selectedCity].wind_speed} m/s
-              </p>
-              <br />
-              <h3 className="text-lg font-semibold">Wind Degree</h3>
-              <p className="text-2xl">
-                {weatherData[selectedCity].wind_deg}&#176;
-              </p>
-              <br />
-              <h3 className="text-lg font-semibold">Wind Gust</h3>
-              <p className="text-2xl">
-                {weatherData[selectedCity].wind_gust} m/s
-              </p>
+            <div className="bg-chartGray text-white p-2 rounded-lg flex flex-col">
+              <div className="flex justify-between">
+                <h3 className="text-lg font-semibold">Wind</h3>
+              </div>
+              <div className="flex justify-between">
+                <p className="text-lg text-red-600">
+                  {weatherData[selectedCity].wind_speed}
+                  <span className="text-sm text-white"> km/h</span>
+                </p>
+                <p className="text-lg text-blue-500">
+                  {weatherData[selectedCity].wind_gust}
+                  <span className="text-sm text-white"> km/h</span>
+                </p>
+              </div>
+              <div className="flex justify-between">
+                <h3 className="text-sm">Wind Speed</h3>
+                <h3 className="text-sm">Wind Gust</h3>
+              </div>
+              <WindChart selectedCity={selectedCity} />
             </div>
-            <div className="bg-chartGray text-white p-4 rounded-2xl flex flex-col justify-center">
-              <h3 className="text-lg font-semibold">Humidity</h3>
-              <p className="text-2xl">{weatherData[selectedCity].humidity} %</p>
+            <div className="bg-chartGray text-white p-2 rounded-lg flex flex-col">
+              <h3 className="text-lg font-semibold">
+                Wind Direction {weatherData[selectedCity].wind_deg}
+              </h3>
+              <WindDirectionChart
+                windDeg={weatherData[selectedCity].wind_deg as number}
+              />
             </div>
             <div className="bg-chartGray text-white p-4 rounded-2xl flex flex-col justify-center">
               <h3 className="text-lg font-semibold">Humidity</h3>

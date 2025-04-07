@@ -71,7 +71,7 @@ const HumidityChart = ({ selectedCity }: { selectedCity: string }) => {
   const fixedLabels = generateFixedLabels();
 
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height="85%">
       <LineChart
         data={chartData}
         margin={{ left: -20, right: 10, top: 20, bottom: 10 }}
