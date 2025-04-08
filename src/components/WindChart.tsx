@@ -43,19 +43,32 @@ const WindChart = ({ selectedCity }: { selectedCity: string }) => {
     fetchData();
   }, [selectedCity]);
 
-  const generateFixedLabels = () => {
+  const generateDynamicLabels = () => {
     const now = new Date();
-    const todayStr = now.toISOString().split("T")[0];
+    const last24HoursStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    const fixedTimes = ["00:00", "06:00", "12:00", "18:00"];
+    const baseHours = [0, 6, 12, 18];
+    let firstLabelHour = baseHours.find(
+      (h) => h >= last24HoursStart.getHours()
+    );
+    if (firstLabelHour === undefined) firstLabelHour = 0;
 
-    return fixedTimes.map((time) => ({
-      timestamp: new Date(`${todayStr}T${time}:00`).getTime(),
-      label: time,
-    }));
+    const timestamps = [];
+    for (let i = 0; i < 5; i++) {
+      const labelTime = new Date(last24HoursStart);
+      labelTime.setHours(firstLabelHour + i * 6, 0, 0, 0);
+      timestamps.push({
+        timestamp: labelTime.getTime(),
+        label: labelTime.toLocaleTimeString("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      });
+    }
+    return timestamps;
   };
 
-  const fixedLabels = generateFixedLabels();
+  const dynamicLabels = generateDynamicLabels();
 
   return (
     <ResponsiveContainer width="100%" height="80%">
@@ -72,9 +85,9 @@ const WindChart = ({ selectedCity }: { selectedCity: string }) => {
           scale="time"
           type="number"
           domain={["dataMin", "dataMax"]}
-          ticks={fixedLabels.map((label) => label.timestamp)}
+          ticks={dynamicLabels.map((label) => label.timestamp)}
           tickFormatter={(tick) => {
-            const label = fixedLabels.find((l) => l.timestamp === tick);
+            const label = dynamicLabels.find((l) => l.timestamp === tick);
             return label ? label.label : "";
           }}
           stroke="white"
