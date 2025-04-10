@@ -3,25 +3,42 @@ import Image from "next/image";
 
 const Navbar = () => {
   return (
-    <nav className="w-full bg-white shadow-md py-2 px-6 flex justify-between items-center">
+    <nav className="w-full bg-white shadow-md py-2 px-6 flex items-center">
+      {/* Home on the left with flex-grow */}
       <Link
         href="/"
-        className="text-md font-semibold text-gray-700 hover:text-blue-500"
+        className="text-md font-semibold text-gray-700 hover:text-blue-500 flex-grow"
       >
         Home
       </Link>
-      <Link
-        href="/dashboard"
-        className="text-md font-semibold text-gray-700 hover:text-blue-500 flex items-center gap-0.5"
-      >
-        <Image
-          src="/cloudy-day.png"
-          alt="Cloudy Weather Icon"
-          width={15}
-          height={20}
-        />
-        Weather
-      </Link>
+
+      {/* Right-aligned menu items */}
+      <div className="flex items-center gap-4">
+        <Link
+          href="/dashboard"
+          className="text-md font-semibold text-gray-700 hover:text-blue-500 flex items-center gap-1"
+        >
+          <Image
+            src="/cloudy-day.png"
+            alt="Cloudy Weather Icon"
+            width={15}
+            height={20}
+          />
+          Weather
+        </Link>
+        <Link
+          href="/dashboard"
+          className="text-md font-semibold text-gray-700 hover:text-blue-500 flex items-center gap-1"
+        >
+          <Image
+            src="/data-retrieval.png"
+            alt="Data Retrieval Icon"
+            width={15}
+            height={20}
+          />
+          Data Retrieval
+        </Link>
+      </div>
     </nav>
   );
 };
