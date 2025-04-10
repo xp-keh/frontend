@@ -6,6 +6,11 @@ import Navbar from "../../components/Navbar";
 import useWeatherWebSocket from "../../hooks/useWeatherWebSocket";
 import TemperatureChart from "../../components/TemperatureChart";
 import HumidityChart from "../../components/HumidityChart";
+import WindChart from "../../components/WindChart";
+import WindDirectionChart from "../../components/WindDirectionChart";
+import WeatherIcon from "../../components/WeatherIcon";
+import HourlyForecastTable from "../../components/HourlyForecastTable";
+import DailyForecastTable from "../../components/DailyForecastTable";
 
 const WeatherDashboard = () => {
   const { weatherData, error } = useWeatherWebSocket(
@@ -16,44 +21,67 @@ const WeatherDashboard = () => {
   return (
     <div className="min-h-screen bg-black">
       <Navbar />
-
       <div className="grid grid-cols-4 grid-rows-3 gap-2 p-3 h-screen">
         <div className="col-span-3 row-span-2 bg-gray-300 rounded-lg flex items-center justify-center">
           <Map onSelectCity={setSelectedCity} />
         </div>
-
         {selectedCity && weatherData[selectedCity] ? (
           <>
-            <div className="bg-chartGray text-white p-2 rounded-lg flex flex-col">
-              <h3 className="text-md font-semibold">{selectedCity}</h3>
-              <p className="text-sm">
-                {(() => {
-                  let lat = "";
-                  let lon = "";
+            <div className="bg-chartGray text-white p-4 rounded-lg flex flex-col">
+              <div className="flex justify-between items-center">
+                <h3 className="text-2xl font-semibold">{selectedCity}</h3>
 
-                  if (selectedCity === "Kretek") {
-                    lat = "-7.9923";
-                    lon = "110.2973";
-                  } else if (selectedCity === "Jogjakarta") {
-                    lat = "-7.8021";
-                    lon = "110.3628";
-                  } else if (selectedCity === "Menggoran") {
-                    lat = "-7.9525";
-                    lon = "110.4942";
-                  } else if (selectedCity === "Bandara_DIY") {
-                    lat = "-7.9007";
-                    lon = "110.0573";
-                  } else if (selectedCity === "Bantul") {
-                    lat = "-7.8750";
-                    lon = "110.3268";
-                  }
+                <span className="text-sm justify-center">
+                  {(() => {
+                    let lat = "";
+                    let lon = "";
 
-                  return `Coord: (${lat}, ${lon})`;
-                })()}
-              </p>
-              <p className="text-sm">
-                {weatherData[selectedCity]?.description}
-              </p>
+                    if (selectedCity === "Kretek") {
+                      lat = "-7.9923";
+                      lon = "110.2973";
+                    } else if (selectedCity === "Jogjakarta") {
+                      lat = "-7.8021";
+                      lon = "110.3628";
+                    } else if (selectedCity === "Menggoran") {
+                      lat = "-7.9525";
+                      lon = "110.4942";
+                    } else if (selectedCity === "Bandara_DIY") {
+                      lat = "-7.9007";
+                      lon = "110.0573";
+                    } else if (selectedCity === "Bantul") {
+                      lat = "-7.8750";
+                      lon = "110.3268";
+                    }
+                    return `(${lat},${lon})`;
+                  })()}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <WeatherIcon
+                  description={String(
+                    weatherData[selectedCity]?.description || ""
+                  )}
+                />
+                <p className="text-lg justify-baseline">
+                  {String(weatherData[selectedCity]?.description || "")
+                    .split(" ")
+                    .map(
+                      (word: string) =>
+                        word.charAt(0).toUpperCase() + word.slice(1)
+                    )
+                    .join(" ")}
+                </p>
+              </div>
+              <HourlyForecastTable
+                selectedCity={selectedCity}
+              ></HourlyForecastTable>
+            </div>
+            <div className="bg-chartGray text-white p-4 rounded-lg flex flex-col">
+              <h3 className="text-2xl font-semibold">7 Days Forecast</h3>
+
+              <DailyForecastTable
+                selectedCity={selectedCity}
+              ></DailyForecastTable>
             </div>
             <div className="bg-chartGray text-white p-2 rounded-lg flex flex-col">
               <div className="flex justify-between">
@@ -61,46 +89,50 @@ const WeatherDashboard = () => {
                 <p className="text-md">
                   {(
                     (weatherData[selectedCity]?.temp as number) - 273.15
-                  ).toFixed(2)}{" "}
+                  ).toFixed(1)}{" "}
                   °C
                 </p>
               </div>
-              <h3 className="text-sm">Last 2 days</h3>
+              <h3 className="text-sm">Last 24 hours</h3>
               <TemperatureChart selectedCity={selectedCity} />
             </div>
             <div className="bg-chartGray text-white p-2 rounded-lg flex flex-col">
               <div className="flex justify-between">
                 <h3 className="text-lg font-semibold">Humidity</h3>
-                <p className="text-2xl">
+                <p className="text-md">
                   {weatherData[selectedCity].humidity} %
                 </p>
               </div>
-              <h3 className="text-sm">Last 2 days</h3>
+              <h3 className="text-sm">Last 24 hours</h3>
               <HumidityChart selectedCity={selectedCity} />
             </div>
-            <div className="bg-chartGray text-white p-4 rounded-2xl flex flex-col justify-center">
-              <h3 className="text-lg font-semibold">Wind Speed</h3>
-              <p className="text-2xl">
-                {weatherData[selectedCity].wind_speed} m/s
-              </p>
-              <br />
-              <h3 className="text-lg font-semibold">Wind Degree</h3>
-              <p className="text-2xl">
-                {weatherData[selectedCity].wind_deg}&#176;
-              </p>
-              <br />
-              <h3 className="text-lg font-semibold">Wind Gust</h3>
-              <p className="text-2xl">
-                {weatherData[selectedCity].wind_gust} m/s
-              </p>
+            <div className="bg-chartGray text-white p-2 rounded-lg flex flex-col">
+              <div className="flex justify-between">
+                <h3 className="text-lg font-semibold">Wind</h3>
+              </div>
+              <div className="flex justify-between">
+                <p className="text-lg text-blue-500">
+                  {weatherData[selectedCity].wind_speed}
+                  <span className="text-sm text-white"> km/h</span>
+                </p>
+                <p className="text-lg text-red-500">
+                  {weatherData[selectedCity].wind_gust}
+                  <span className="text-sm text-white"> km/h</span>
+                </p>
+              </div>
+              <div className="flex justify-between">
+                <h3 className="text-sm">Wind Speed</h3>
+                <h3 className="text-sm">Wind Gust</h3>
+              </div>
+              <WindChart selectedCity={selectedCity} />
             </div>
-            <div className="bg-chartGray text-white p-4 rounded-2xl flex flex-col justify-center">
-              <h3 className="text-lg font-semibold">Humidity</h3>
-              <p className="text-2xl">{weatherData[selectedCity].humidity} %</p>
-            </div>
-            <div className="bg-chartGray text-white p-4 rounded-2xl flex flex-col justify-center">
-              <h3 className="text-lg font-semibold">Humidity</h3>
-              <p className="text-2xl">{weatherData[selectedCity].humidity} %</p>
+            <div className="bg-chartGray text-white p-2 rounded-lg flex flex-col items-center">
+              <h3 className="text-lg font-semibold mb-2 self-start">
+                Wind Direction
+              </h3>
+              <WindDirectionChart
+                direction={Number(weatherData[selectedCity]?.wind_deg) || 0}
+              ></WindDirectionChart>
             </div>
           </>
         ) : (
@@ -109,7 +141,6 @@ const WeatherDashboard = () => {
           </p>
         )}
       </div>
-
       {error && <p className="text-red-500 text-center mt-4">{error}</p>}
     </div>
   );

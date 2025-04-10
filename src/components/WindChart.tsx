@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import { useEffect, useState, useMemo } from "react";
 
-const HumidityChart = ({ selectedCity }: { selectedCity: string }) => {
+const WindChart = ({ selectedCity }: { selectedCity: string }) => {
   const [chartData, setChartData] = useState<any[]>([]);
 
   useEffect(() => {
@@ -23,12 +23,17 @@ const HumidityChart = ({ selectedCity }: { selectedCity: string }) => {
 
         const dataArray = rawData.weather_data || [];
 
+        const now = Date.now();
+        const last24Hours = now - 24 * 60 * 60 * 1000;
+
         const cityData = dataArray
           .filter((entry: any) => entry.location === selectedCity)
           .map((entry: any) => ({
             time: entry.dt * 1000,
-            hum: entry.humidity,
-          }));
+            speed: entry.wind_speed,
+            gust: entry.wind_gust,
+          }))
+          .filter((entry: { time: number }) => entry.time >= last24Hours);
 
         setChartData(cityData);
       } catch (error) {
@@ -69,7 +74,7 @@ const HumidityChart = ({ selectedCity }: { selectedCity: string }) => {
   }, []); // Empty dependency array ensures it's calculated only once
 
   return (
-    <ResponsiveContainer width="100%" height="85%">
+    <ResponsiveContainer width="100%" height="80%">
       <LineChart
         data={chartData}
         margin={{ left: -20, right: 10, top: 20, bottom: 10 }}
@@ -101,6 +106,7 @@ const HumidityChart = ({ selectedCity }: { selectedCity: string }) => {
         <YAxis
           domain={["auto", "auto"]}
           stroke="white"
+          tickFormatter={(tick) => tick.toFixed(1)}
           tick={{
             fontSize: 12,
             fill: "white",
@@ -127,9 +133,16 @@ const HumidityChart = ({ selectedCity }: { selectedCity: string }) => {
         />
         <Line
           type="monotone"
-          dataKey="hum"
-          stroke="white"
-          strokeWidth={0.5}
+          dataKey="speed"
+          stroke="blue"
+          strokeWidth={1}
+          dot={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="gust"
+          stroke="red"
+          strokeWidth={1}
           dot={false}
         />
       </LineChart>
@@ -137,4 +150,4 @@ const HumidityChart = ({ selectedCity }: { selectedCity: string }) => {
   );
 };
 
-export default HumidityChart;
+export default WindChart;

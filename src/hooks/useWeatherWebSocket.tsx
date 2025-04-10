@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 interface WeatherData {
-  [city: string]: { [key: string]: number | string }; // Supports both numbers and text (description)
+  [city: string]: { [key: string]: number | string };
 }
 
 const useWeatherWebSocket = (url: string) => {
@@ -18,8 +18,6 @@ const useWeatherWebSocket = (url: string) => {
     socket.onmessage = (event) => {
       try {
         const newData = JSON.parse(event.data);
-        console.log("🌍 Incoming Data:", newData);
-        // console.log("🌍 Incoming Data:");
 
         const city = newData.location || "Unknown";
 
