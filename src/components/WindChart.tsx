@@ -8,7 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 const WindChart = ({ selectedCity }: { selectedCity: string }) => {
   const [chartData, setChartData] = useState<any[]>([]);
@@ -34,6 +34,7 @@ const WindChart = ({ selectedCity }: { selectedCity: string }) => {
             gust: entry.wind_gust,
           }))
           .filter((entry: { time: number }) => entry.time >= last24Hours);
+
         setChartData(cityData);
       } catch (error) {
         console.error("Error fetching weather data:", error);
@@ -43,32 +44,34 @@ const WindChart = ({ selectedCity }: { selectedCity: string }) => {
     fetchData();
   }, [selectedCity]);
 
-  const generateDynamicLabels = () => {
+  // Generate X-axis labels ONCE when the component mounts
+  const staticLabels = useMemo(() => {
     const now = new Date();
-    const last24HoursStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
-    const baseHours = [0, 6, 12, 18];
-    let firstLabelHour = baseHours.find(
-      (h) => h >= last24HoursStart.getHours()
-    );
-    if (firstLabelHour === undefined) firstLabelHour = 0;
+    const nowTimestamp = now.getTime();
+    const startTimestamp = nowTimestamp - 24 * 60 * 60 * 1000;
 
     const timestamps = [];
-    for (let i = 0; i < 5; i++) {
-      const labelTime = new Date(last24HoursStart);
-      labelTime.setHours(firstLabelHour + i * 6, 0, 0, 0);
-      timestamps.push({
-        timestamp: labelTime.getTime(),
-        label: labelTime.toLocaleTimeString("en-GB", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      });
-    }
-    return timestamps;
-  };
+    for (let i = 0; i <= 24; i++) {
+      const labelTime = new Date(startTimestamp + i * 60 * 60 * 1000);
+      const hour = labelTime.getHours();
 
-  const dynamicLabels = generateDynamicLabels();
+      if ([0, 6, 12, 18].includes(hour)) {
+        timestamps.push({
+          timestamp: labelTime.getTime(),
+          label: labelTime.toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        });
+      }
+    }
+
+    return {
+      timestamps,
+      firstTimestamp: startTimestamp,
+      lastTimestamp: nowTimestamp,
+    };
+  }, []); // Empty dependency array ensures it's calculated only once
 
   return (
     <ResponsiveContainer width="100%" height="80%">
@@ -84,11 +87,13 @@ const WindChart = ({ selectedCity }: { selectedCity: string }) => {
           dataKey="time"
           scale="time"
           type="number"
-          domain={["dataMin", "dataMax"]}
-          ticks={dynamicLabels.map((label) => label.timestamp)}
+          domain={[staticLabels.firstTimestamp, staticLabels.lastTimestamp]}
+          ticks={staticLabels.timestamps.map((label) => label.timestamp)}
           tickFormatter={(tick) => {
-            const label = dynamicLabels.find((l) => l.timestamp === tick);
-            return label ? label.label : "";
+            const labelObj = staticLabels.timestamps.find(
+              (l) => l.timestamp === tick
+            );
+            return labelObj ? labelObj.label : "";
           }}
           stroke="white"
           tick={{
@@ -130,14 +135,14 @@ const WindChart = ({ selectedCity }: { selectedCity: string }) => {
           type="monotone"
           dataKey="speed"
           stroke="blue"
-          strokeWidth={0.5}
+          strokeWidth={1}
           dot={false}
         />
         <Line
           type="monotone"
           dataKey="gust"
           stroke="red"
-          strokeWidth={0.5}
+          strokeWidth={1}
           dot={false}
         />
       </LineChart>

@@ -13,7 +13,10 @@ const WeatherIcon = ({ description }: { description: string }) => {
   } else if (description.toLowerCase().includes("moderate rain")) {
     iconSrc = "/moderate-rain.png";
     altText = "Moderate Rain";
-  } else if (description.toLowerCase().includes("heavy rain")) {
+  } else if (
+    description.toLowerCase().includes("heavy") ||
+    description.toLowerCase().includes("rain")
+  ) {
     iconSrc = "/thunderstorm.png";
     altText = "Thunderstorm";
   } else if (description.toLowerCase().includes("sun")) {

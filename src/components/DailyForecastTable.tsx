@@ -10,23 +10,22 @@ interface ForecastEntry {
   description: string;
 }
 
-const ForecastTable = ({ selectedCity }: { selectedCity: string }) => {
+const DailyForecastTable = ({ selectedCity }: { selectedCity: string }) => {
   const [forecastData, setForecastData] = useState<ForecastEntry[]>([]);
 
   useEffect(() => {
     const fetchForecast = async () => {
       try {
         const response = await fetch(
-          "http://localhost:8080/weather/forecast_next_5_hours"
+          "http://localhost:8080/weather/forecast_next_7_days"
         );
         const data = await response.json();
-        console.log(data);
 
         const cityForecast = data.forecast.filter(
           (entry: ForecastEntry) => entry.location === selectedCity
         );
 
-        setForecastData(cityForecast.slice(0, 5));
+        setForecastData(cityForecast);
       } catch (error) {
         console.error("Error fetching forecast data:", error);
       }
@@ -36,28 +35,29 @@ const ForecastTable = ({ selectedCity }: { selectedCity: string }) => {
   }, [selectedCity]);
 
   return (
-    <div className="grid grid-cols-5 gap-2 mt-2">
+    <div className="grid grid-cols-6 gap-1 mt-4">
       {forecastData.map((entry, index) => (
         <div
           key={index}
-          className="bg-gray-900 text-white p-3 rounded-3xl flex flex-col items-center justify-center space-y-1"
+          className="bg-customGray text-white p-3 rounded-3xl flex flex-col items-center justify-center space-y-2"
         >
-          <p className="text-sm font-semibold">{entry.temp.toFixed(1)}°C</p>
+          <p className="text-sm">
+            {new Intl.DateTimeFormat("en-GB", {
+              weekday: "short",
+            }).format(new Date(entry.dt))}
+          </p>
+          <p className="text-xs">{entry.temp.toFixed(1)}°C</p>
 
           <WeatherIcon description={entry.description} />
 
-          <p className="text-xs text-center">
-            {entry.description
-              .split(" ")
-              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-              .join(" ")}{" "}
-          </p>
-
-          <p className="text-sm">
-            {new Intl.DateTimeFormat("en-GB", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }).format(new Date(entry.dt))}
+          <p className="text-[10px] text-center">
+            {entry.description.includes("heavy") &&
+            entry.description.includes("rain")
+              ? "Heavy Rain"
+              : entry.description
+                  .split(" ")
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(" ")}
           </p>
         </div>
       ))}
@@ -65,4 +65,4 @@ const ForecastTable = ({ selectedCity }: { selectedCity: string }) => {
   );
 };
 
-export default ForecastTable;
+export default DailyForecastTable;

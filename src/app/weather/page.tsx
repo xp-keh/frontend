@@ -9,7 +9,8 @@ import HumidityChart from "../../components/HumidityChart";
 import WindChart from "../../components/WindChart";
 import WindDirectionChart from "../../components/WindDirectionChart";
 import WeatherIcon from "../../components/WeatherIcon";
-import ForecastTable from "../../components/ForecastTable";
+import HourlyForecastTable from "../../components/HourlyForecastTable";
+import DailyForecastTable from "../../components/DailyForecastTable";
 
 const WeatherDashboard = () => {
   const { weatherData, error } = useWeatherWebSocket(
@@ -57,18 +58,31 @@ const WeatherDashboard = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <WeatherIcon
-                  description={weatherData[selectedCity]?.description}
+                  description={String(
+                    weatherData[selectedCity]?.description || ""
+                  )}
                 />
                 <p className="text-lg justify-baseline">
-                  {weatherData[selectedCity]?.description
+                  {String(weatherData[selectedCity]?.description || "")
                     .split(" ")
-                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(" ")}{" "}
+                    .map(
+                      (word: string) =>
+                        word.charAt(0).toUpperCase() + word.slice(1)
+                    )
+                    .join(" ")}
                 </p>
               </div>
-              <ForecastTable selectedCity={selectedCity}></ForecastTable>
+              <HourlyForecastTable
+                selectedCity={selectedCity}
+              ></HourlyForecastTable>
             </div>
-            <div className="bg-chartGray text-white p-2 rounded-lg flex flex-col"></div>
+            <div className="bg-chartGray text-white p-4 rounded-lg flex flex-col">
+              <h3 className="text-2xl font-semibold">7 Days Forecast</h3>
+
+              <DailyForecastTable
+                selectedCity={selectedCity}
+              ></DailyForecastTable>
+            </div>
             <div className="bg-chartGray text-white p-2 rounded-lg flex flex-col">
               <div className="flex justify-between">
                 <h3 className="text-md font-semibold">Temperature</h3>
@@ -112,18 +126,14 @@ const WeatherDashboard = () => {
               </div>
               <WindChart selectedCity={selectedCity} />
             </div>
-            <div className="bg-chartGray text-white p-2 rounded-lg flex flex-col">
-              <h3 className="text-lg font-semibold">
-                Wind Direction {weatherData[selectedCity].wind_deg}
+            <div className="bg-chartGray text-white p-2 rounded-lg flex flex-col items-center">
+              <h3 className="text-lg font-semibold mb-2 self-start">
+                Wind Direction
               </h3>
               <WindDirectionChart
-                windDeg={weatherData[selectedCity].wind_deg as number}
-              />
+                direction={Number(weatherData[selectedCity]?.wind_deg) || 0}
+              ></WindDirectionChart>
             </div>
-            {/* <div className="bg-chartGray text-white p-4 rounded-2xl flex flex-col justify-center">
-              <h3 className="text-lg font-semibold">Humidity</h3>
-              <p className="text-2xl">{weatherData[selectedCity].humidity} %</p>
-            </div> */}
           </>
         ) : (
           <p className="text-gray-700 col-span-3 text-center">
@@ -131,7 +141,6 @@ const WeatherDashboard = () => {
           </p>
         )}
       </div>
-
       {error && <p className="text-red-500 text-center mt-4">{error}</p>}
     </div>
   );
