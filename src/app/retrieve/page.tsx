@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getCities, getPreviewData, downloadData, City } from '@/actions/retrieve';
+import { getCities, getPreviewData, getSummaryData, downloadData, City, getSeismicGraphData, getWeatherGraphData } from '@/actions/retrieve';
+import SeismicLineChart from '@/components/SeismicLineChart';
+import WeatherChart from '@/components/WeatherChart';
 
 export default function RetrievePage() {
   const [cities, setCities] = useState<City[]>([]);
@@ -9,7 +11,13 @@ export default function RetrievePage() {
   const [startTime, setStartTime] = useState<string>('2024-01-01 00:00:00');
   const [endTime, setEndTime] = useState<string>('2024-01-02 12:00:00');
   const [result, setResult] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [summary, setSummary] = useState<any>(null);
+  const [seismic, setSeismic] = useState<any>(null);
+  const [weather, setWeather] = useState<any>(null);
+
+  const [loadingPreview, setLoadingPreview] = useState<boolean>(false);
+  const [loadingDownload, setLoadingDownload] = useState<boolean>(false);
+  const [loadingSummary, setLoadingSummary] = useState<boolean>(false);
 
   // Fetch city list when component mounts
   useEffect(() => {
@@ -32,20 +40,50 @@ export default function RetrievePage() {
     }
 
     try {
-      setLoading(true);
+      setLoadingPreview(true);
       const previewData = await getPreviewData(
         startTime,
         endTime,
         selectedCity.latitude,
         selectedCity.longitude
       );
-      console.log('Preview Data:', previewData); // Check this in console
+      console.log('Preview Data:', previewData);
       setResult(previewData);
+
+      setLoadingSummary(true);
+      const ragSummary = await getSummaryData(
+        startTime,
+        endTime,
+        selectedCity.latitude,
+        selectedCity.longitude
+      );
+      console.log('Summary:', ragSummary);
+      setSummary(ragSummary);
+      setLoadingSummary(false);
+
+      const seismicData = await getSeismicGraphData(
+        startTime,
+        endTime,
+        selectedCity.latitude,
+        selectedCity.longitude
+      );
+      console.log('Seismic Data:', seismicData);
+      setSeismic(seismicData);
+
+      const weatherData = await getWeatherGraphData(
+        startTime,
+        endTime,
+        selectedCity.latitude,
+        selectedCity.longitude
+      );
+      console.log('Weather Data:', weatherData);
+      setWeather(weatherData);
     } catch (error) {
       console.error('Failed to retrieve data:', error);
       alert('Failed to retrieve data. Please check console.');
     } finally {
-      setLoading(false);
+      setLoadingPreview(false);
+      setLoadingSummary(false);
     }
   };
 
@@ -56,7 +94,7 @@ export default function RetrievePage() {
     }
 
     try {
-      setLoading(true);
+      setLoadingDownload(true);
       const fileBlob = await downloadData(
         startTime,
         endTime,
@@ -64,7 +102,7 @@ export default function RetrievePage() {
         selectedCity.longitude
       );
 
-      // Create a download link dynamically
+      // Create a download link dynamically 
       const url = window.URL.createObjectURL(fileBlob);
       const a = document.createElement('a');
       a.href = url;
@@ -77,132 +115,159 @@ export default function RetrievePage() {
       console.error('Download failed:', error);
       alert('Failed to download data. Please check console.');
     } finally {
-      setLoading(false);
+      setLoadingDownload(false);
     }
   };
 
+  const uniqueSummaries =
+    result?.merged_data
+      ? Array.from(
+        new Map(
+          result.merged_data.map((item: any) => {
+            const key = `${item.partition_date}_${item.seismic_table}_${item.weather_table}`;
+            return [key, item];
+          })
+        ).values()
+      )
+      : [];
+
+
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Retrieve Data Preview</h1>
+    <div className="p-12 max-w-screen mx-auto bg-[#0f111a] text-white min-h-screen">
 
-      {/* City Dropdown */}
-      <div className="mb-4">
-        <label className="block mb-2 font-semibold">Select City:</label>
-        <select
-          className="w-full border p-2 pr-8 rounded"
-          onChange={(e) => {
-            const city = cities.find((c) => c.city === e.target.value) || null;
-            setSelectedCity(city);
-          }}
-          defaultValue=""
-        >
-          <option value="" disabled>
-            -- Select City --
-          </option>
-          {cities.map((city) => (
-            <option key={city.city} value={city.city}>
-              {city.city}
-            </option>
-          ))}
-        </select>
-      </div>
+      <div className="bg-[#1c1e29] p-6 rounded-xl shadow-md space-y-4 mb-6">
+        <h1 className="text-xl font-bold mb-2">Retrieve Data Preview</h1>
 
-      {/* Start Time Input */}
-      <div className="mb-4">
-        <label className="block mb-2 font-semibold">Start Time:</label>
-        <input
-          type="text"
-          value={startTime}
-          onChange={(e) => setStartTime(e.target.value)}
-          className="w-full border p-2 rounded"
-          placeholder="YYYY-MM-DD HH:mm:ss"
-        />
-      </div>
-
-      {/* End Time Input */}
-      <div className="mb-4">
-        <label className="block mb-2 font-semibold">End Time:</label>
-        <input
-          type="text"
-          value={endTime}
-          onChange={(e) => setEndTime(e.target.value)}
-          className="w-full border p-2 rounded"
-          placeholder="YYYY-MM-DD HH:mm:ss"
-        />
-      </div>
-
-      {/* Submit Button */}
-      <div className="flex gap-4 mt-4">
-        <button
-          onClick={handleSubmit}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-          disabled={loading}
-        >
-          {loading ? 'Loading...' : 'Preview Data'}
-        </button>
-
-        <button
-          onClick={handleDownload}
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
-          disabled={loading}
-        >
-          {loading ? 'Preparing Download...' : 'Download Data'}
-        </button>
-      </div>
-
-
-      {/* Display Result */}
-      {result && (
-        <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-4">Summary of Queried Tables:</h2>
-
-          {/* 1. List all queried partition dates and tables */}
-          <div className="space-y-2 text-black">
-            {result.merged_data.map((item: any, index: number) => (
-              <div key={index} className="p-3 border rounded bg-gray-50">
-                <p><strong>📅 Partition Date:</strong> {item.partition_date}</p>
-                <p><strong>🌋 Seismic Table:</strong> {item.seismic_table}</p>
-                <p><strong>🌦️ Weather Table:</strong> {item.weather_table}</p>
-              </div>
+        {/* City Selector */}
+        <div>
+          <label className="block mb-1 font-medium">Select City</label>
+          <select
+            className="w-full bg-[#2a2d3e] border border-gray-600 p-2 rounded text-white"
+            onChange={(e) => {
+              const city = cities.find((c) => c.city === e.target.value) || null;
+              setSelectedCity(city);
+            }}
+            defaultValue=""
+          >
+            <option value="" disabled>-- Select City --</option>
+            {cities.map((city) => (
+              <option key={city.city} value={city.city}>{city.city}</option>
             ))}
+          </select>
+        </div>
+
+        {/* Time Range */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block mb-1 font-medium">Start Time</label>
+            <input
+              className="w-full bg-[#2a2d3e] border border-gray-600 p-2 rounded text-white"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              placeholder="YYYY-MM-DD HH:mm:ss"
+            />
           </div>
+          <div>
+            <label className="block mb-1 font-medium">End Time</label>
+            <input
+              className="w-full bg-[#2a2d3e] border border-gray-600 p-2 rounded text-white"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              placeholder="YYYY-MM-DD HH:mm:ss"
+            />
+          </div>
+        </div>
 
-          {/* 2. Show Top 100 records from the first partition */}
-          {result.merged_data.length > 0 && result.merged_data[0].data.length > 0 && (
-            <div className="mt-8">
-              <h2 className="text-xl font-semibold mb-4">Top 100 Full Records from First Partition:</h2>
-              <div className="overflow-x-auto max-h-[600px]">
-                <table className="min-w-full border text-xs">
-                  <thead>
-                    <tr className="bg-gray-200">
-                      {Object.keys(result.merged_data[0].data[0]).map((key, idx) => (
-                        <th key={idx} className="border px-2 py-1 text-black">{key}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {result.merged_data[0].data.slice(0, 100).map((record: any, rowIdx: number) => (
-                      <tr key={rowIdx} className="odd:bg-white even:bg-gray-100">
-                        {Object.values(record).map((value, colIdx) => (
-                          <td key={colIdx} className="border px-2 py-1 text-black">
-                            {typeof value === 'number' ? value.toFixed(4) : String(value)}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+        <div className="flex gap-4 mt-4">
+          <button
+            onClick={handleSubmit}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded"
+            disabled={loadingPreview}
+          >
+            {loadingPreview ? 'Previewing...' : 'Preview Data'}
+          </button>
+          <button
+            onClick={handleDownload}
+            className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded"
+            disabled={loadingDownload}
+          >
+            {loadingDownload ? 'Downloading...' : 'Download Data'}
+          </button>
+        </div>
+      </div>
 
-          {/* 3. Handle empty data */}
-          {result.merged_data.length === 0 && (
-            <p className="text-red-500 mt-4">No data available for this selection.</p>
-          )}
+      {loadingSummary ? (
+        <div className="bg-[#1c1e29] p-6 rounded-xl shadow-md space-y-4 animate-pulse">
+          <h2 className="text-lg font-semibold">Weather Summary</h2>
+          <div className="bg-[#2a2d3e] p-4 rounded-md text-sm text-gray-400 italic">
+            Generating summary...
+          </div>
+        </div>
+      ) : summary && (
+        <div className="bg-[#1c1e29] p-6 rounded-xl shadow-md space-y-4">
+          <h2 className="text-lg font-semibold">Weather Summary</h2>
+          <p className="text-sm bg-[#2a2d3e] p-4 rounded-md whitespace-pre-line">
+            {summary}
+          </p>
         </div>
       )}
 
+
+      {result?.merged_data?.length > 0 && (
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold mb-2">Top 100 Records</h2>
+          <div className="overflow-x-auto max-h-[400px] border border-gray-700 rounded-lg relative">
+            <table className="min-w-full text-xs text-white">
+              <thead className="bg-[#2a2d3e] text-white sticky top-0 z-20">
+                <tr>
+                  {Object.keys(result.merged_data[0]).map((key) => (
+                    <th key={key} className="px-3 py-2 border-b border-gray-600">{key}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {result.merged_data.slice(0, 100).map((record: any, i: number) => (
+                  <tr key={i} className="odd:bg-[#1c1e29] even:bg-[#222433]">
+                    {Object.values(record).map((val, j) => (
+                      <td key={j} className="px-3 py-1 border-b border-gray-700">
+                        {typeof val === 'number' ? val.toFixed(2) : String(val)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
+        {seismic?.graph_data && (
+          <div className="bg-[#1c1e29] p-4 rounded-xl shadow">
+            <h2 className="text-md font-semibold mb-2">Seismic Signal Graph</h2>
+            <SeismicLineChart
+              hnz={seismic.graph_data.hnz}
+              hnn={seismic.graph_data.hnn}
+              hne={seismic.graph_data.hne}
+            />
+            <p className="text-xs mt-2 text-gray-400">
+              <span className="text-yellow-400">● HNZ</span> (Vertical),{" "}
+              <span className="text-green-400">● HNN</span> (North-South),{" "}
+              <span className="text-blue-400">● HNE</span> (East-West)
+            </p>
+          </div>
+        )}
+
+        {weather?.graph_data && (
+          <div className="bg-[#1c1e29] p-4 rounded-xl shadow">
+            <h2 className="text-md font-semibold">Weather Data</h2>
+            <WeatherChart
+              temp={weather.graph_data.temp}
+              wind={weather.graph_data.wind}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
