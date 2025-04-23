@@ -15,7 +15,7 @@ const Navbar = () => {
       {/* Right-aligned menu items */}
       <div className="flex items-center gap-4">
         <Link
-          href="/dashboard"
+          href="/weather"
           className="text-md font-semibold text-gray-700 hover:text-blue-500 flex items-center gap-1"
         >
           <Image
@@ -27,7 +27,7 @@ const Navbar = () => {
           Weather
         </Link>
         <Link
-          href="/dashboard"
+          href="/retrieve"
           className="text-md font-semibold text-gray-700 hover:text-blue-500 flex items-center gap-1"
         >
           <Image
