@@ -20,11 +20,23 @@ const Navbar = () => {
         >
           <Image
             src="/cloudy-day.png"
-            alt="Cloudy Weather Icon"
+            alt="Weather Logo"
             width={15}
             height={20}
           />
           Weather
+        </Link>
+        <Link
+          href="/seismic"
+          className="text-md font-semibold text-gray-700 hover:text-blue-500 flex items-center gap-1"
+        >
+          <Image
+            src="/waveform.png"
+            alt="Seismic Logo"
+            width={25}
+            height={30}
+          />
+          Seismic
         </Link>
         <Link
           href="/retrieve"
