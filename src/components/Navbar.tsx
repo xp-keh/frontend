@@ -39,7 +39,7 @@ const Navbar = () => {
           Seismic
         </Link>
         <Link
-          href="/dashboard"
+          href="/retrieve"
           className="text-md font-semibold text-gray-700 hover:text-blue-500 flex items-center gap-1"
         >
           <Image
