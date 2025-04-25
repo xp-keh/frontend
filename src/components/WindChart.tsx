@@ -17,11 +17,11 @@ const WindChart = ({ selectedCity }: { selectedCity: string }) => {
     const fetchData = async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/weather/fetch_wind`
+          `${process.env.NEXT_PUBLIC_API_URL}/weather/fetch_weather?type=wind`
         );
         const rawData = await response.json();
 
-        const dataArray = rawData.wind_data || [];
+        const dataArray = rawData.data || [];
 
         const now = Date.now();
         const last24Hours = now - 24 * 60 * 60 * 1000;

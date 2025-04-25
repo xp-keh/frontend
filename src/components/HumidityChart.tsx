@@ -17,11 +17,11 @@ const HumidityChart = ({ selectedCity }: { selectedCity: string }) => {
     const fetchData = async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/weather/fetch_hum`
+          `${process.env.NEXT_PUBLIC_API_URL}/weather/fetch_weather?type=humidity`
         );
         const rawData = await response.json();
 
-        const dataArray = rawData.humidity_data || [];
+        const dataArray = rawData.data || [];
 
         const cityData = dataArray
           .filter((entry: any) => entry.location === selectedCity)

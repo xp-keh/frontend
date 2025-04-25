@@ -17,11 +17,11 @@ const TemperatureChart = ({ selectedCity }: { selectedCity: string }) => {
     const fetchData = async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/weather/fetch_temp`
+          `${process.env.NEXT_PUBLIC_API_URL}/weather/fetch_weather?type=temp`
         );
         const rawData = await response.json();
 
-        const dataArray = rawData.temperature_data || [];
+        const dataArray = rawData.data || [];
 
         const cityData = dataArray
           .filter((entry: any) => entry.location === selectedCity)
