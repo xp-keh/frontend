@@ -39,7 +39,6 @@ const TemperatureChart = ({ selectedCity }: { selectedCity: string }) => {
     fetchData();
   }, [selectedCity]);
 
-  // Generate labels ONCE when the component mounts
   const staticLabels = useMemo(() => {
     const now = new Date();
     const nowTimestamp = now.getTime();
@@ -66,7 +65,7 @@ const TemperatureChart = ({ selectedCity }: { selectedCity: string }) => {
       firstTimestamp: startTimestamp,
       lastTimestamp: nowTimestamp,
     };
-  }, []); // Empty dependency array ensures it runs once
+  }, []);
 
   return (
     <ResponsiveContainer width="100%" height="100%">
