@@ -37,8 +37,6 @@ const SeismicChart = ({
           time: new Date(entry.dt).getTime(),
           value: entry.data,
         }));
-        console.log("formattedData", formattedData);
-
         setChartData(formattedData);
       } catch (error) {
         console.error(`Error fetching ${channel} data:`, error);
