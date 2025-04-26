@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useEffect, useState, useMemo } from "react";
+import { getHumidityData } from "@/actions/weather";
 
 const HumidityChart = ({ selectedCity }: { selectedCity: string }) => {
   const [chartData, setChartData] = useState<any[]>([]);
@@ -16,11 +17,7 @@ const HumidityChart = ({ selectedCity }: { selectedCity: string }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/weather/fetch_weather?type=humidity`
-        );
-        const rawData = await response.json();
-
+        const rawData = await getHumidityData(selectedCity);
         const dataArray = rawData.data || [];
 
         const cityData = dataArray
@@ -39,7 +36,6 @@ const HumidityChart = ({ selectedCity }: { selectedCity: string }) => {
     fetchData();
   }, [selectedCity]);
 
-  // Generate X-axis labels ONCE when the component mounts
   const staticLabels = useMemo(() => {
     const now = new Date();
     const nowTimestamp = now.getTime();

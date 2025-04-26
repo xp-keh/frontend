@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useEffect, useState, useMemo } from "react";
+import { getTemperatureData } from "@/actions/weather";
 
 const TemperatureChart = ({ selectedCity }: { selectedCity: string }) => {
   const [chartData, setChartData] = useState<any[]>([]);
@@ -16,11 +17,7 @@ const TemperatureChart = ({ selectedCity }: { selectedCity: string }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/weather/fetch_weather?type=temp`
-        );
-        const rawData = await response.json();
-
+        const rawData = await getTemperatureData(selectedCity);
         const dataArray = rawData.data || [];
 
         const cityData = dataArray
