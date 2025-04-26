@@ -5,11 +5,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    pull_policy: build
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     container_name: data-station
     ports:
       - "4002:4002"
-    env_file:
-      - stack.env
+    # env_file:
+    #   - stack.env
     restart: unless-stopped
     networks:
       data-station-network:
