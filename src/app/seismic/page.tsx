@@ -6,8 +6,6 @@ import Navbar from "../../components/Navbar";
 import useSeismicWebSocket from "../../hooks/useSeismicWebSocket";
 import SeismicWSChart from "../../components/SeismicWSChart";
 
-import SeismicChart from "@/components/SeismicChart";
-
 const SeismicDashboard = () => {
   const { seismicData, error } = useSeismicWebSocket(
     "ws://85.209.163.202:8014/ws-seismic"

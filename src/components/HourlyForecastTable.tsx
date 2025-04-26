@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import WeatherIcon from "./WeatherIcon";
+import { getHourlyForecastData } from "@/actions/weather";
 
 interface ForecastEntry {
   location: string;
@@ -14,25 +15,20 @@ const HourlyForecastTable = ({ selectedCity }: { selectedCity: string }) => {
   const [forecastData, setForecastData] = useState<ForecastEntry[]>([]);
 
   useEffect(() => {
-    const fetchForecast = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/weather/forecast_next_5_hours`
-        );
-        const data = await response.json();
-        console.log(data);
-
-        const cityForecast = data.forecast.filter(
+        const rawData = await getHourlyForecastData();
+        const cityForecast = rawData.forecast.filter(
           (entry: ForecastEntry) => entry.location === selectedCity
         );
 
         setForecastData(cityForecast.slice(0, 5));
       } catch (error) {
-        console.error("Error fetching forecast data:", error);
+        console.error("Error fetching weather data:", error);
       }
     };
 
-    fetchForecast();
+    fetchData();
   }, [selectedCity]);
 
   return (
