@@ -17,7 +17,7 @@ const DailyForecastTable = ({ selectedCity }: { selectedCity: string }) => {
     const fetchForecast = async () => {
       try {
         const response = await fetch(
-          "http://localhost:8080/weather/forecast_next_7_days"
+          `${process.env.NEXT_PUBLIC_API_URL}/weather/forecast_next_7_days`
         );
         const data = await response.json();
 

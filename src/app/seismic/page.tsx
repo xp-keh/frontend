@@ -1,6 +1,57 @@
-'use client';
+"use client";
+import LeafMap from "../../components/LeafMap";
+import { locations } from "../../components/LeafMap";
+import { useState } from "react";
+import Navbar from "../../components/Navbar";
+import useSeismicWebSocket from "../../hooks/useSeismicWebSocket";
+import SeismicWSChart from "../../components/SeismicWSChart";
 
-export default function SeismicPage() {
-    return <div>Seismic Data Page</div>;
-  }
-  
+import SeismicChart from "@/components/SeismicChart";
+
+const SeismicDashboard = () => {
+  const { seismicData, error } = useSeismicWebSocket(
+    "ws://85.209.163.202:8014/ws-seismic"
+  );
+
+  const [selectedStation, setSelectedStation] = useState(locations[0].name);
+
+  return (
+    <div className="min-h-screen bg-black">
+      <Navbar />
+      <div className="grid grid-cols-2 grid-rows-3 gap-2 p-3 h-screen">
+        <div className="col-span-1 row-span-2 bg-gray-300 rounded-lg flex items-center justify-center">
+          <LeafMap onSelectStation={setSelectedStation} />
+        </div>
+        <div className="bg-chartGray  text-white p-2 rounded-lg flex flex-col">
+          <p>BHZ</p>
+          <SeismicWSChart
+            seismicData={seismicData}
+            selectedStation={selectedStation}
+            selectedChannel="BHZ"
+          />
+        </div>
+        <div className="bg-chartGray  text-white p-2 rounded-lg flex flex-col">
+          <p>BHN</p>
+          <SeismicWSChart
+            seismicData={seismicData}
+            selectedStation={selectedStation}
+            selectedChannel="BHN"
+          />
+        </div>
+        <div className="bg-chartGray text-white p-2 rounded-lg flex flex-col">
+          <p>General Data</p>
+        </div>
+        <div className="bg-chartGray  text-white p-2 rounded-lg flex flex-col">
+          <p>BHE</p>
+          <SeismicWSChart
+            seismicData={seismicData}
+            selectedStation={selectedStation}
+            selectedChannel="BHE"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SeismicDashboard;
