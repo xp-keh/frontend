@@ -25,6 +25,6 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
-EXPOSE 4001
+EXPOSE 4002
 
-CMD ["npm", "start", "--", "-p", "4001"]
+CMD ["npm", "start", "--", "-p", "4002"]
