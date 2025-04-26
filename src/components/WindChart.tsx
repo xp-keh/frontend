@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useEffect, useState, useMemo } from "react";
+import { getWindData } from "@/actions/weather";
 
 const WindChart = ({ selectedCity }: { selectedCity: string }) => {
   const [chartData, setChartData] = useState<any[]>([]);
@@ -16,15 +17,8 @@ const WindChart = ({ selectedCity }: { selectedCity: string }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/weather/fetch_weather?type=wind`
-        );
-        const rawData = await response.json();
-
+        const rawData = await getWindData(selectedCity);
         const dataArray = rawData.data || [];
-
-        const now = Date.now();
-        const last24Hours = now - 24 * 60 * 60 * 1000;
 
         const cityData = dataArray
           .filter((entry: any) => entry.location === selectedCity)
@@ -32,8 +26,7 @@ const WindChart = ({ selectedCity }: { selectedCity: string }) => {
             time: entry.dt * 1000,
             speed: entry.wind_speed,
             gust: entry.wind_gust,
-          }))
-          .filter((entry: { time: number }) => entry.time >= last24Hours);
+          }));
 
         setChartData(cityData);
       } catch (error) {
@@ -44,7 +37,6 @@ const WindChart = ({ selectedCity }: { selectedCity: string }) => {
     fetchData();
   }, [selectedCity]);
 
-  // Generate X-axis labels ONCE when the component mounts
   const staticLabels = useMemo(() => {
     const now = new Date();
     const nowTimestamp = now.getTime();
@@ -71,7 +63,7 @@ const WindChart = ({ selectedCity }: { selectedCity: string }) => {
       firstTimestamp: startTimestamp,
       lastTimestamp: nowTimestamp,
     };
-  }, []); // Empty dependency array ensures it's calculated only once
+  }, []);
 
   return (
     <ResponsiveContainer width="100%" height="80%">
