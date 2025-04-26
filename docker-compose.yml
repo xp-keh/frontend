@@ -5,9 +5,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    pull_policy: build
-    environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    # pull_policy: build
+    # environment:
+    #   - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     container_name: data-station
     ports:
       - "4002:4002"
