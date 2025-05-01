@@ -218,16 +218,17 @@ const LeafMap = ({
       className="w-full h-full rounded-lg"
     >
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      {locations.map((loc) => (
-        <Marker
-          key={loc.name}
-          position={[loc.lat, loc.lon]}
-          icon={locationIcon}
-          eventHandlers={{ click: () => onSelectStation(loc.name) }}
-        >
-          <Popup>{loc.name}</Popup>
-        </Marker>
-      ))}
+      {locationIcon &&
+        locations.map((loc) => (
+          <Marker
+            key={loc.name}
+            position={[loc.lat, loc.lon]}
+            icon={locationIcon}
+            eventHandlers={{ click: () => onSelectStation(loc.name) }}
+          >
+            <Popup>{loc.name}</Popup>
+          </Marker>
+        ))}
     </MapContainer>
   );
 };

@@ -23,6 +23,7 @@ const DailyForecastTable = ({ selectedCity }: { selectedCity: string }) => {
         );
 
         setForecastData(cityForecast.slice(0, 7));
+        console.log(forecastData);
       } catch (error) {
         console.error("Error fetching weather data:", error);
       }
