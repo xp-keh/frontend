@@ -1,4 +1,4 @@
-'use server'; // Optional if you want to use as server action (App Router context)
+'use server';
 
 export interface City {
     city: string;

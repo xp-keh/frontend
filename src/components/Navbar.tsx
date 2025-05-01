@@ -5,12 +5,12 @@ const Navbar = () => {
   return (
     <nav className="w-full bg-white shadow-md py-2 px-6 flex items-center">
       {/* Home on the left with flex-grow */}
-      <Link
+      {/* <Link
         href="/"
         className="text-md font-semibold text-gray-700 hover:text-blue-500 flex-grow"
       >
         Home
-      </Link>
+      </Link> */}
 
       {/* Right-aligned menu items */}
       <div className="flex items-center gap-4">
