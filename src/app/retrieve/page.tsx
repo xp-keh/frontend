@@ -22,7 +22,6 @@ export default function RetrievePage() {
   const [loadingDownload, setLoadingDownload] = useState<boolean>(false);
   const [loadingSummary, setLoadingSummary] = useState<boolean>(false);
 
-  // Fetch city list when component mounts
   useEffect(() => {
     const fetchCitiesList = async () => {
       try {
@@ -35,7 +34,6 @@ export default function RetrievePage() {
     fetchCitiesList();
   }, []);
 
-  // Handle form submission
   const handleSubmit = async () => {
     if (!selectedCity) {
       alert('Please select a city!');
@@ -47,13 +45,23 @@ export default function RetrievePage() {
       return;
     }
 
+    if (endTime < startTime) {
+      alert('End time cannot be earlier than start time!');
+      return;
+    }
+    
+    if (endTime > new Date()) {
+      alert('End time cannot be in the future!');
+      return;
+    }
+
     const formatDateToLocalString = (date: Date) => {
       const pad = (n: number) => n.toString().padStart(2, '0');
       return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
     };
-    
+
     const formattedStart = formatDateToLocalString(startTime);
-    const formattedEnd = formatDateToLocalString(endTime);    
+    const formattedEnd = formatDateToLocalString(endTime);
 
     try {
       setSummary(null);
@@ -119,6 +127,16 @@ export default function RetrievePage() {
       return;
     }
 
+    if (endTime < startTime) {
+      alert('End time cannot be earlier than start time!');
+      return;
+    }
+    
+    if (endTime > new Date()) {
+      alert('End time cannot be in the future!');
+      return;
+    }
+
     const formattedStart = startTime.toISOString().slice(0, 19).replace('T', ' ');
     const formattedEnd = endTime.toISOString().slice(0, 19).replace('T', ' ');
 
@@ -131,15 +149,14 @@ export default function RetrievePage() {
         selectedCity.longitude
       );
 
-      // Create a download link dynamically 
       const url = window.URL.createObjectURL(fileBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `data_${selectedCity.city}_${startTime}_${endTime}.csv`; // You can adjust file name/format
+      a.download = `data_${selectedCity.city}_${startTime}_${endTime}.csv`;
       document.body.appendChild(a);
       a.click();
       a.remove(); // Clean up
-      window.URL.revokeObjectURL(url); // Release object URL
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Download failed:', error);
       alert('Failed to download data. Please check console.');
@@ -162,17 +179,17 @@ export default function RetrievePage() {
 
 
   return (
-    <div className="min-h-screen bg-[#0f111a]">
+    <div className="min-h-screen bg-black]">
       <Navbar />
-      <div className="p-12 max-w-screen mx-auto bg-[#0f111a] text-white min-h-screen">
-        <div className="bg-[#1c1e29] p-6 rounded-xl shadow-md space-y-4 mb-6">
+      <div className="p-12 max-w-screen mx-auto bg-black text-white min-h-screen">
+        <div className="bg-[#14151d] p-6 rounded-xl shadow-md space-y-4 mb-6">
           <h1 className="text-xl font-bold mb-2">Retrieve Data Preview</h1>
 
           {/* City Selector */}
           <div>
             <label className="block mb-1 font-medium">Select City</label>
             <select
-              className="w-full bg-[#2a2d3e] border border-gray-600 p-2 rounded text-white"
+              className="w-full border bg-[#1d1f2b] border-[#444654] p-2 rounded text-white"
               onChange={(e) => {
                 const city = cities.find((c) => c.city === e.target.value) || null;
                 setSelectedCity(city);
@@ -186,6 +203,10 @@ export default function RetrievePage() {
             </select>
           </div>
 
+          <p className="text-sm text-yellow-500 mt-2">
+            Note: Data is available starting from <strong>26 April 2025</strong>.
+          </p>
+
           {/* Time Range */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -197,7 +218,7 @@ export default function RetrievePage() {
                 timeFormat="HH:mm"
                 timeIntervals={60}
                 dateFormat="yyyy-MM-dd HH:mm:ss"
-                className="w-full bg-[#2a2d3e] border border-gray-600 p-2 rounded text-white"
+                className="w-full border bg-[#1d1f2b] border-[#444654] p-2 rounded text-white"
                 wrapperClassName="w-full"
                 calendarClassName="bg-[#2a2d3e] text-white"
               />
@@ -211,7 +232,7 @@ export default function RetrievePage() {
                 timeFormat="HH:mm"
                 timeIntervals={60}
                 dateFormat="yyyy-MM-dd HH:mm:ss"
-                className="w-full bg-[#2a2d3e] border border-gray-600 p-2 rounded text-white"
+                className="w-full border bg-[#1d1f2b] border-[#444654] p-2 rounded text-white"
                 wrapperClassName="w-full"
                 calendarClassName="bg-[#2a2d3e] text-white"
               />
@@ -221,14 +242,14 @@ export default function RetrievePage() {
           <div className="flex gap-4 mt-4">
             <button
               onClick={handleSubmit}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded"
+              className="bg-[#1d1f2b] hover:bg-[#2a2d3e] border border-[#444654] text-white font-semibold px-4 py-2 rounded"
               disabled={loadingPreview}
             >
               {loadingPreview ? 'Previewing...' : 'Preview Data'}
             </button>
             <button
               onClick={handleDownload}
-              className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded"
+              className="bg-[#1d1f2b] hover:bg-[#2a2d3e] border border-[#444654] text-white font-semibold px-4 py-2 rounded"
               disabled={loadingDownload}
             >
               {loadingDownload ? 'Downloading...' : 'Download Data'}
@@ -237,39 +258,39 @@ export default function RetrievePage() {
         </div>
 
         {loadingSummary ? (
-          <div className="bg-[#1c1e29] p-6 rounded-xl shadow-md space-y-4 animate-pulse">
+          <div className="bg-[#14151d] p-6 rounded-xl shadow-md space-y-4 animate-pulse">
             <h2 className="text-lg font-semibold">Weather Summary</h2>
-            <div className="bg-[#2a2d3e] p-4 rounded-md text-sm text-gray-400 italic">
+            <div className="bg-[#1d1f2b] p-4 rounded-md text-sm text-gray-400 italic">
               Generating summary...
             </div>
           </div>
         ) : summary && (
-          <div className="bg-[#1c1e29] p-6 rounded-xl shadow-md space-y-4">
+          <div className="bg-[#14151d] p-6 rounded-xl shadow-md space-y-4">
             <h2 className="text-lg font-semibold">Weather Summary</h2>
-            <p className="text-sm bg-[#2a2d3e] p-4 rounded-md whitespace-pre-line">
+            <p className="text-sm bg-[#1d1f2b] p-4 rounded-md whitespace-pre-line">
               {summary}
             </p>
           </div>
         )}
 
 
-        {result?.merged_data?.length > 0 && (
+        {result?.previewData?.length > 0 && (
           <div className="mt-6">
-            <h2 className="text-lg font-semibold mb-2">Top 100 Records</h2>
+            <h2 className="text-lg font-semibold mb-2">Top 10 Records</h2>
             <div className="overflow-x-auto max-h-[400px] border border-gray-700 rounded-lg relative">
               <table className="min-w-full text-xs text-white">
                 <thead className="bg-[#2a2d3e] text-white sticky top-0">
                   <tr>
-                    {Object.keys(result.merged_data[0]).map((key) => (
+                    {Object.keys(result.previewData[0]).map((key) => (
                       <th key={key} className="px-3 py-2 border-b border-gray-600">{key}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {result.merged_data.slice(0, 100).map((record: any, i: number) => (
+                  {result.previewData.slice(0, 100).map((record: any, i: number) => (
                     <tr key={i} className="odd:bg-[#1c1e29] even:bg-[#222433]">
                       {Object.values(record).map((val, j) => (
-                        <td key={j} className="px-3 py-1 border-b border-gray-700">
+                        <td key={j} className="px-3 py-1 border-b border-gray-700 text-center">
                           {typeof val === 'number' ? val.toFixed(2) : String(val)}
                         </td>
                       ))}
@@ -283,7 +304,7 @@ export default function RetrievePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
           {seismic?.graph_data && (
-            <div className="bg-[#1c1e29] p-4 rounded-xl shadow">
+            <div className="bg-[#14151d] p-4 rounded-xl shadow">
               <h2 className="text-md font-semibold mb-2">Seismic Signal Graph</h2>
               <SeismicLineChart
                 hnz={seismic.graph_data.hnz}
@@ -299,7 +320,7 @@ export default function RetrievePage() {
           )}
 
           {weather?.graph_data && (
-            <div className="bg-[#1c1e29] p-4 rounded-xl shadow">
+            <div className="bg-[#14151d] p-4 rounded-xl shadow">
               <h2 className="text-md font-semibold">Weather Data</h2>
               <WeatherChart
                 temp={weather.graph_data.temp}

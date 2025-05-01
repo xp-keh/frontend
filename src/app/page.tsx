@@ -6,7 +6,7 @@ const App = () => {
   const router = useRouter();
 
   useEffect(() => {
-    router.push("/dashboard");
+    router.push("/weather");
   }, []);
 
   return null;
