@@ -13,6 +13,20 @@ const SeismicDashboard = () => {
 
   const [selectedStation, setSelectedStation] = useState(locations[0].name);
 
+  const getStationCoordinates = (cityName: string) => {
+    const station = locations.find((loc) => loc.name === cityName);
+    return station
+      ? {
+          city: station.city,
+          province: station.province,
+          lat: station.lat,
+          lon: station.lon,
+        }
+      : { city: "", province: "", lat: "", lon: "" };
+  };
+
+  const { city, province, lat, lon } = getStationCoordinates(selectedStation);
+
   return (
     <div className="min-h-screen bg-black">
       <Navbar />
@@ -37,8 +51,17 @@ const SeismicDashboard = () => {
           />
         </div>
         <div className="bg-chartGray text-white p-2 rounded-lg flex flex-col">
-          <p>General Data</p>
+          <p>General Information</p>
+          <div className="flex flex-col">
+            <h3 className="text-xl font-semibold">{city}</h3>
+            <span className="text-sm font-semibold">{province}</span>
+          </div>
+
+          <span className="text-sm justify-center">
+            {lat && lon ? `(${lat},${lon})` : "Coordinates not found"}
+          </span>
         </div>
+
         <div className="bg-chartGray  text-white p-2 rounded-lg flex flex-col">
           <p>BHE</p>
           <SeismicWSChart
