@@ -20,7 +20,7 @@ const useSeismicWebSocket = (url: string) => {
 
     socket.onmessage = (event) => {
       try {
-        console.log("📥 Raw message received:", event.data);
+        // console.log("📥 Raw message received:", event.data);
         const newData = JSON.parse(event.data);
 
         const parsedData: SeismicDataPoint = {
