@@ -37,9 +37,14 @@ const HumidityChart = ({ selectedCity }: { selectedCity: string }) => {
   }, [selectedCity]);
 
   const staticLabels = useMemo(() => {
-    const now = new Date();
-    const nowTimestamp = now.getTime();
-    const startTimestamp = nowTimestamp - 24 * 60 * 60 * 1000;
+    // const now = new Date();
+    // const nowTimestamp = now.getTime();
+    // const startTimestamp = nowTimestamp - 24 * 60 * 60 * 1000;
+
+    const nowTimestamp = new Date();
+    nowTimestamp.setMinutes(0, 0, 0);
+    const alignedNow = nowTimestamp.getTime();
+    const startTimestamp = alignedNow - 24 * 60 * 60 * 1000;
 
     const timestamps = [];
     for (let i = 0; i <= 24; i++) {
@@ -60,9 +65,9 @@ const HumidityChart = ({ selectedCity }: { selectedCity: string }) => {
     return {
       timestamps,
       firstTimestamp: startTimestamp,
-      lastTimestamp: nowTimestamp,
+      lastTimestamp: alignedNow,
     };
-  }, []); // Empty dependency array ensures it's calculated only once
+  }, []);
 
   return (
     <ResponsiveContainer width="100%" height="85%">
