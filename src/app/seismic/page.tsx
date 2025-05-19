@@ -11,7 +11,7 @@ const SeismicDashboard = () => {
     "ws://85.209.163.202:8014/ws-seismic"
   );
 
-  const [selectedStation, setSelectedStation] = useState(locations[0].name);
+  const [selectedStation, setSelectedStation] = useState(locations[1].name);
 
   const getStationCoordinates = (cityName: string) => {
     const station = locations.find((loc) => loc.name === cityName);
