@@ -11,30 +11,13 @@ import {
 import { useEffect, useState, useMemo } from "react";
 import { getTemperatureData } from "@/actions/weather";
 
-const TemperatureChart = ({ selectedCity }: { selectedCity: string }) => {
-  const [chartData, setChartData] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const rawData = await getTemperatureData(selectedCity);
-        const dataArray = rawData.data || [];
-
-        const cityData = dataArray
-          .filter((entry: any) => entry.location === selectedCity)
-          .map((entry: any) => ({
-            time: entry.dt * 1000,
-            temperature: (entry.temp - 273.15).toFixed(1),
-          }));
-
-        setChartData(cityData);
-      } catch (error) {
-        console.error("Error fetching weather data:", error);
-      }
-    };
-
-    fetchData();
-  }, [selectedCity]);
+const TemperatureChart = ({ temp }: { temp: { timestamp: string; value: number }[] }) => {
+  const chartData = useMemo(() => {
+    return temp.map((entry) => ({
+      time: new Date(entry.timestamp).getTime(),
+      temperature: +(entry.value - 273.15).toFixed(1),
+    }));
+  }, [temp]);
 
   const staticLabels = useMemo(() => {
     // const now = new Date();
@@ -79,26 +62,7 @@ const TemperatureChart = ({ selectedCity }: { selectedCity: string }) => {
           stroke="rgba(255, 255, 255, 0.05)"
           strokeDasharray="3 3"
         />
-        <XAxis
-          dataKey="time"
-          scale="time"
-          type="number"
-          domain={[staticLabels.firstTimestamp, staticLabels.lastTimestamp]}
-          ticks={staticLabels.timestamps.map((label) => label.timestamp)}
-          tickFormatter={(tick) => {
-            const labelObj = staticLabels.timestamps.find(
-              (l) => l.timestamp === tick
-            );
-            return labelObj ? labelObj.label : "";
-          }}
-          stroke="white"
-          tick={{
-            fontSize: 8,
-            fill: "white",
-            textAnchor: "middle",
-            dy: 1,
-          }}
-        />
+        <XAxis dataKey="time" hide />
         <YAxis
           domain={["auto", "auto"]}
           stroke="white"

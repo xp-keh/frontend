@@ -34,7 +34,20 @@ export default function WeatherChart({ temp, wind }: WeatherChartProps) {
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
             <XAxis dataKey="timestamp" tick={false} />
             <YAxis unit="°C" domain={['auto', 'auto']} tick={{ fill: '#ccc' }} />
-            <Tooltip />
+            <Tooltip
+              labelFormatter={(label) => {
+                const date = new Date(label);
+                if (isNaN(date.getTime())) return 'Invalid Date';
+                return new Intl.DateTimeFormat("en-GB", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }).format(date);
+              }}
+              formatter={(value: number) => [`${value}°C`, 'Temperature']}
+            />
             <Line type="monotone" dataKey="temp" stroke="#f87171" strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>

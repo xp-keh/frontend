@@ -9,10 +9,13 @@ import 'react-datepicker/dist/react-datepicker.css';
 import DatePicker from 'react-datepicker';
 
 export default function RetrievePage() {
+  const todayMidnight = new Date();
+  todayMidnight.setHours(0, 0, 0, 0);
+
   const [cities, setCities] = useState<City[]>([]);
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  const [startTime, setStartTime] = useState<Date | null>(new Date('2024-01-01T00:00:00'));
-  const [endTime, setEndTime] = useState<Date | null>(new Date('2024-01-02T12:00:00'));
+  const [startTime, setStartTime] = useState<Date | null>(todayMidnight);
+  const [endTime, setEndTime] = useState<Date | null>(todayMidnight);
   const [result, setResult] = useState<any>(null);
   const [summary, setSummary] = useState<any>(null);
   const [seismic, setSeismic] = useState<any>(null);
@@ -21,6 +24,11 @@ export default function RetrievePage() {
   const [loadingPreview, setLoadingPreview] = useState<boolean>(false);
   const [loadingDownload, setLoadingDownload] = useState<boolean>(false);
   const [loadingSummary, setLoadingSummary] = useState<boolean>(false);
+
+  const [errorPreview, setErrorPreview] = useState<string | null>(null);
+  const [errorSummary, setErrorSummary] = useState<string | null>(null);
+  const [errorSeismic, setErrorSeismic] = useState<string | null>(null);
+  const [errorWeather, setErrorWeather] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCitiesList = async () => {
@@ -49,7 +57,7 @@ export default function RetrievePage() {
       alert('End time cannot be earlier than start time!');
       return;
     }
-    
+
     if (endTime > new Date()) {
       alert('End time cannot be in the future!');
       return;
@@ -63,12 +71,17 @@ export default function RetrievePage() {
     const formattedStart = formatDateToLocalString(startTime);
     const formattedEnd = formatDateToLocalString(endTime);
 
-    try {
-      setSummary(null);
-      setResult(null);
-      setSeismic(null);
-      setWeather(null);
+    setSummary(null);
+    setResult(null);
+    setSeismic(null);
+    setWeather(null);
 
+    setErrorPreview(null);
+    setErrorSummary(null);
+    setErrorSeismic(null);
+    setErrorWeather(null);
+
+    try {
       setLoadingPreview(true);
       const previewData = await getPreviewData(
         formattedStart,
@@ -76,9 +89,16 @@ export default function RetrievePage() {
         selectedCity.latitude,
         selectedCity.longitude
       );
-      console.log('Preview Data:', previewData);
       setResult(previewData);
+      console.log(previewData)
+    } catch (error) {
+      console.error('Preview error:', error);
+      setErrorPreview('⚠️ Failed to retrieve preview data.');
+    } finally {
+      setLoadingPreview(false);
+    }
 
+    try {
       setLoadingSummary(true);
       const ragSummary = await getSummaryData(
         formattedStart,
@@ -86,42 +106,42 @@ export default function RetrievePage() {
         selectedCity.latitude,
         selectedCity.longitude
       );
-      console.log('Summary:', ragSummary);
       setSummary(ragSummary.message);
+    } catch (error) {
+      console.error('Summary error:', error);
+      setErrorSummary('⚠️ Failed to retrieve weather summary.');
+    } finally {
       setLoadingSummary(false);
+    }
 
+    try {
       const seismicData = await getSeismicGraphData(
         formattedStart,
         formattedEnd,
         selectedCity.latitude,
         selectedCity.longitude
       );
-      console.log('Seismic Data:', seismicData);
       setSeismic(seismicData);
+    } catch (error) {
+      console.error('Seismic error:', error);
+      setErrorSeismic('⚠️ Failed to retrieve seismic data.');
+    }
 
+    try {
       const weatherData = await getWeatherGraphData(
         formattedStart,
         formattedEnd,
         selectedCity.latitude,
         selectedCity.longitude
       );
-      console.log('Weather Data:', weatherData);
       setWeather(weatherData);
     } catch (error) {
-      console.error('Failed to retrieve data:', error);
-      alert('Failed to retrieve data. Please check console.');
-    } finally {
-      setLoadingPreview(false);
-      setLoadingSummary(false);
+      console.error('Weather error:', error);
+      setErrorWeather('⚠️ Failed to retrieve weather data.');
     }
   };
 
   const handleDownload = async () => {
-    if (!selectedCity) {
-      alert('Please select a city before downloading!');
-      return;
-    }
-
     if (!selectedCity || !startTime || !endTime) {
       alert('Please select a city and both time ranges!');
       return;
@@ -131,7 +151,7 @@ export default function RetrievePage() {
       alert('End time cannot be earlier than start time!');
       return;
     }
-    
+
     if (endTime > new Date()) {
       alert('End time cannot be in the future!');
       return;
@@ -204,7 +224,7 @@ export default function RetrievePage() {
           </div>
 
           <p className="text-sm text-yellow-500 mt-2">
-            Note: Data is available starting from <strong>26 April 2025</strong>.
+            Note: Data is available starting from <strong>20 May 2025</strong>.
           </p>
 
           {/* Time Range */}
