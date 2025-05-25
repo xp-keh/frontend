@@ -50,6 +50,18 @@ const Navbar = () => {
           />
           Data Retrieval
         </Link>
+        <Link
+          href="/localwisdom"
+          className="text-md font-semibold text-gray-700 hover:text-blue-500 flex items-center gap-1"
+        >
+          <Image
+            src="/local-wisdom.png"
+            alt="Local Wisdom Icon"
+            width={10}
+            height={15}
+          />
+          Local Wisdom
+        </Link>
       </div>
     </nav>
   );
