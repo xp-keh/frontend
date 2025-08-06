@@ -7,7 +7,6 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-    # pull_policy: build
     environment:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     container_name: data-station
@@ -17,9 +16,9 @@ services:
       - stack.env
     restart: unless-stopped
     networks:
-      data-station-network:
-        ipv4_address: 172.20.14.95
+      nginx-manager_customnetwork:
+        ipv4_address: 172.20.0.121
 
 networks:
-  data-station-network:
+  nginx-manager_customnetwork:
     external: true
