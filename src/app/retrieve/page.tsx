@@ -160,6 +160,9 @@ export default function RetrievePage() {
     const formattedStart = startTime.toISOString().slice(0, 19).replace('T', ' ');
     const formattedEnd = endTime.toISOString().slice(0, 19).replace('T', ' ');
 
+    const startString = startTime.toISOString().split("T")[0];
+    const endString = endTime.toISOString().split("T")[0];
+
     try {
       setLoadingDownload(true);
       const fileBlob = await downloadData(
@@ -172,7 +175,7 @@ export default function RetrievePage() {
       const url = window.URL.createObjectURL(fileBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `data_${selectedCity.city}_${startTime}_${endTime}.csv`;
+      a.download = `data_${selectedCity.city}_${startString}_${endString}.csv`;
       document.body.appendChild(a);
       a.click();
       a.remove(); // Clean up
