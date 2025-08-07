@@ -17,9 +17,9 @@ services:
       - stack.env
     restart: unless-stopped
     networks:
-      data-station-network:
-        ipv4_address: 172.20.14.95
+      nginx-manager_customnetwork:
+        ipv4_address: 172.20.0.122
 
 networks:
-  data-station-network:
+  nginx-manager_customnetwork:
     external: true
