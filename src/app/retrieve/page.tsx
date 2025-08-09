@@ -199,7 +199,7 @@ export default function RetrievePage() {
 
 
   return (
-    <div className="min-h-screen bg-black]">
+    <div className="min-h-screen bg-black text-white">
       <Navbar />
       <div className="p-12 max-w-screen mx-auto bg-black text-white min-h-screen">
         <div className="bg-[#14151d] p-6 rounded-xl shadow-md space-y-4 mb-6">

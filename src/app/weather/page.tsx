@@ -33,7 +33,7 @@ const WeatherDashboard = () => {
   const { city, province, lat, lon } = getStationCoordinates(selectedStation);
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-black text-white">
       <Navbar />
       <div className="grid grid-cols-4 grid-rows-3 gap-2 p-3 h-screen">
         <div className="col-span-3 row-span-2 bg-gray-300 rounded-lg flex items-center justify-center">
