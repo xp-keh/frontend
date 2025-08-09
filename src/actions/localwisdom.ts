@@ -11,8 +11,9 @@ export async function analyzeLocalWisdom(query: string) {
     });
 
     const data = await res.json();
+
     if (!res.ok) {
-      throw new Error(data.error || "Server error");
+      throw new Error(data.error || data.message || JSON.stringify(data) || "Server error");
     }
 
     return data;
