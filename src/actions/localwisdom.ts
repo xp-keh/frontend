@@ -4,7 +4,7 @@ export async function analyzeLocalWisdom(query: string) {
   if (!query.trim()) return { error: "Query is empty" };
 
   try {
-    const res = await fetch("http://85.209.163.202:5050/query", {
+    const res = await fetch("http://localwisdom_backend:5050/query", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query }),
