@@ -1,16 +1,19 @@
-# Install dependencies only when needed
 FROM node:18-alpine AS deps
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
 RUN npm ci
 
-# Rebuild the source code only when needed
 FROM node:18-alpine AS builder
 WORKDIR /app
 
-ARG NEXT_PUBLIC_API_URL 
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL  
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_WEATHER_WEBSOCKET
+ARG NEXT_PUBLIC_SEISMIC_WEBSOCKET
+
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_WEATHER_WEBSOCKET=$NEXT_PUBLIC_WEATHER_WEBSOCKET
+ENV NEXT_PUBLIC_SEISMIC_WEBSOCKET=$NEXT_PUBLIC_SEISMIC_WEBSOCKET 
 
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules
