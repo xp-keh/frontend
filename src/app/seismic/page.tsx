@@ -7,9 +7,8 @@ import useSeismicWebSocket from "../../hooks/useSeismicWebSocket";
 import SeismicWSChart from "../../components/SeismicWSChart";
 
 const SeismicDashboard = () => {
-  console.log(`${process.env.NEXT_PUBLIC_SEISMIC_WEBSOCKET}/ws`);
   const { seismicData, error } = useSeismicWebSocket(
-    `${process.env.NEXT_PUBLIC_SEISMIC_WEBSOCKET}/ws-seismic`
+    `${process.env.NEXT_PUBLIC_SEISMIC_WEBSOCKET}`
   );
 
   const [selectedStation, setSelectedStation] = useState(locations[1].name);
