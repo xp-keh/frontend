@@ -13,9 +13,8 @@ import HourlyForecastTable from "../../components/HourlyForecastTable";
 import DailyForecastTable from "../../components/DailyForecastTable";
 
 const WeatherDashboard = () => {
-  console.log(`${process.env.NEXT_PUBLIC_WEATHER_WEBSOCKET}/ws`);
   const { weatherData, error } = useWeatherWebSocket(
-    `${process.env.NEXT_PUBLIC_WEATHER_WEBSOCKET}/ws`
+    `${process.env.NEXT_PUBLIC_WEATHER_WEBSOCKET}`
   );
   const [selectedStation, setSelectedStation] = useState(locations[0].name);
 
