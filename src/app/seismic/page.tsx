@@ -8,7 +8,7 @@ import SeismicWSChart from "../../components/SeismicWSChart";
 
 const SeismicDashboard = () => {
   const { seismicData, error } = useSeismicWebSocket(
-    "ws://85.209.163.202:8014/ws-seismic"
+    `${process.env.NEXT_PUBLIC_SEISMIC_WEBSOCKET}/ws-seismic`
   );
 
   const [selectedStation, setSelectedStation] = useState(locations[1].name);
