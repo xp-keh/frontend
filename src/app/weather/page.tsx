@@ -13,10 +13,6 @@ import HourlyForecastTable from "../../components/HourlyForecastTable";
 import DailyForecastTable from "../../components/DailyForecastTable";
 
 const WeatherDashboard = () => {
-  // const { weatherData, error } = useWeatherWebSocket(
-  //   "ws://85.209.163.202:8012/ws"
-  // );
-  console.log(`${process.env.NEXT_PUBLIC_WEATHER_WEBSOCKET}/ws`);
   const { weatherData, error } = useWeatherWebSocket(
     `${process.env.NEXT_PUBLIC_WEATHER_WEBSOCKET}/ws`
   );
