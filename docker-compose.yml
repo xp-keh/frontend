@@ -7,9 +7,13 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_WEATHER_WEBSOCKET: ${NEXT_PUBLIC_WEATHER_WEBSOCKET}
+        NEXT_PUBLIC_SEISMIC_WEBSOCKET: ${NEXT_PUBLIC_SEISMIC_WEBSOCKET}
     # pull_policy: build
     environment:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NEXT_PUBLIC_WEATHER_WEBSOCKET=${NEXT_PUBLIC_WEATHER_WEBSOCKET}
+      - NEXT_PUBLIC_SEISMIC_WEBSOCKET=${NEXT_PUBLIC_SEISMIC_WEBSOCKET}
     container_name: data-station
     ports:
       - "4004:4004"
