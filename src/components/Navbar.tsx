@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
@@ -43,6 +43,19 @@ const Navbar = () => {
           width={30}
           height={30}
         />
+        <Image src="/LPDP.png" alt="LPDP Logo" width={40} height={30} />
+        <Image
+          src="/KEMENRISTEKDIKTI.svg"
+          alt="Kemenristekdikti Logo"
+          width={40}
+          height={30}
+        />
+        <Image
+          src="/Smart City Pillar.png"
+          alt="Project Logo"
+          width={40}
+          height={30}
+        />
         <span className="font-bold text-gray-800 text-sm md:text-base whitespace-nowrap">
           Vertical Intelligent Application in Smart City Ecosystem
         </span>
@@ -67,14 +80,20 @@ const Navbar = () => {
             />
             Data Station
             <svg
-              className={`w-4 h-4 ml-1 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''
-                }`}
+              className={`w-4 h-4 ml-1 transition-transform duration-200 ${
+                dropdownOpen ? "rotate-180" : ""
+              }`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
             </svg>
           </button>
 
