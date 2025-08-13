@@ -14,7 +14,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Data Station",
-  description: "Developed by Abby Marvel and Ernest Benedictus",
+  description: "This proof of concept is part of the Vertical Intelligent Application in Smart City Ecosystem initiative — a collaboration between Universitas Indonesia, Universitas Gadjah Mada, and Nanyang Technological University.",
+  icons: {
+    icon: "/icon.png", // or "/icon.png"
+  },
 };
 
 export default function RootLayout({

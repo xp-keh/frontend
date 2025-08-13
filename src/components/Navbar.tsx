@@ -24,6 +24,30 @@ const Navbar = () => {
 
   return (
     <nav className="w-full bg-white shadow-md py-2 px-6 flex items-center justify-between z-[9999]">
+      <div className="flex items-center gap-3 select-none cursor-default">
+        <Image
+          src="/UI.png"
+          alt="Universitas Indonesia Logo"
+          width={40}
+          height={30}
+        />
+        <Image
+          src="/UGM.png"
+          alt="Universitas Gadjah Mada Logo"
+          width={40}
+          height={30}
+        />
+        <Image
+          src="/NTU.png"
+          alt="Nanyang Technological University Logo"
+          width={30}
+          height={30}
+        />
+        <span className="font-bold text-gray-800 text-sm md:text-base whitespace-nowrap">
+          Vertical Intelligent Application in Smart City Ecosystem
+        </span>
+      </div>
+
       <div className="flex items-center gap-6">
         <div
           className="relative z-[9998]"
@@ -43,9 +67,8 @@ const Navbar = () => {
             />
             Data Station
             <svg
-              className={`w-4 h-4 ml-1 transition-transform duration-200 ${
-                dropdownOpen ? 'rotate-180' : ''
-              }`}
+              className={`w-4 h-4 ml-1 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''
+                }`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

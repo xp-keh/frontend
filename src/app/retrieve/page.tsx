@@ -7,6 +7,7 @@ import SeismicLineChart from '@/components/SeismicLineChart';
 import WeatherChart from '@/components/WeatherChart';
 import 'react-datepicker/dist/react-datepicker.css';
 import DatePicker from 'react-datepicker';
+import Image from "next/image";
 
 export default function RetrievePage() {
   const todayMidnight = new Date();
