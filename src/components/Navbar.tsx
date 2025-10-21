@@ -1,102 +1,16 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useRef, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-
-type GisCallbackResponse = { credential?: string };
-
-declare global {
-	interface Window {
-		google?: {
-			accounts?: {
-				id?: {
-					initialize?: (opts: {
-						client_id: string;
-						callback: (response: GisCallbackResponse) => void;
-					}) => void;
-					renderButton?: (parent: HTMLElement, options?: Record<string, string>) => void;
-					disableAutoSelect?: () => void;
-				};
-			};
-		};
-	}
-}
-
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
-
-if (!GOOGLE_CLIENT_ID && typeof window !== "undefined") {
-	// Warn in dev when the env var is not provided
-	// eslint-disable-next-line no-console
-	console.warn("NEXT_PUBLIC_GOOGLE_CLIENT_ID is not set. Google Sign-In will not work.");
-}
-
-interface GoogleProfile {
-	id: string;
-	name: string;
-	imageUrl: string;
-	email: string;
-}
+import { useState, useRef, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
-	const router = useRouter();
+	const { authenticated, user, login, logout, loading } = useAuth();
 	const dropdownRef = useRef<HTMLDivElement>(null);
 	const profileMenuRef = useRef<HTMLDivElement>(null);
 
 	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-	const [googleProfile, setGoogleProfile] = useState<GoogleProfile | null>(() => {
-		try {
-			const stored = sessionStorage.getItem("google_profile");
-			return stored ? JSON.parse(stored) : null;
-		} catch {
-			return null;
-		}
-	});
-
-	/** ---------- Helpers ---------- */
-	const decodeJwt = useCallback((token: string) => {
-		try {
-			const payload = token.split(".")[1];
-			const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
-			// legacy-safe decode
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-			return JSON.parse(decodeURIComponent(escape(json)));
-		} catch {
-			return null;
-		}
-	}, []);
-
-	const renderGoogleButton = useCallback(() => {
-		// Do not render the Google button if a profile is already present
-		if (googleProfile) return;
-		const container = document.getElementById("gisButton");
-		const google = window.google?.accounts?.id;
-		if (!container || !google?.renderButton) return;
-		container.innerHTML = "";
-		google.renderButton(container, { theme: "outline", size: "medium", type: "standard" });
-	}, [googleProfile]);
-
-	// Remove any Google button nodes that the GIS library may have injected.
-	const removeGoogleButtons = useCallback(() => {
-		try {
-			// remove known GIS nodes by class or known ids
-			const els = Array.from(document.querySelectorAll(".g_id_signin, #g_id_onload, iframe[id^='gsi_']"));
-			els.forEach((el) => el.remove());
-			// remove any iframes that point to the GSI button endpoint
-			const iframes = Array.from(document.querySelectorAll("iframe")).filter(
-				(i) => (i as HTMLIFrameElement).src && (i as HTMLIFrameElement).src.includes("accounts.google.com/gsi/button")
-			);
-			iframes.forEach((f) => f.remove());
-			const container = document.getElementById("gisButton");
-			if (container) container.innerHTML = "";
-		} catch {
-			// ignore
-		}
-	}, []);
-
-	// sessionStorage is read during initial state to avoid race conditions with the
-	// Google Identity script that may render the button before effects run.
 
 	/** ---------- Outside click handlers ---------- */
 	useEffect(() => {
@@ -109,112 +23,10 @@ const Navbar = () => {
 		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, []);
 
-	/** ---------- Google Sign-In initialization ---------- */
-	useEffect(() => {
-		if (googleProfile) {
-			removeGoogleButtons();
-			return;
-		}
-
-		const init = () => {
-			const google = window.google?.accounts?.id;
-			if (!google || typeof google.initialize !== "function") return;
-
-			google.initialize({
-				client_id: GOOGLE_CLIENT_ID,
-				callback: (response: GisCallbackResponse) => {
-					if (!response.credential) return;
-					const payload = decodeJwt(response.credential);
-					if (!payload) return;
-
-					const profile: GoogleProfile = {
-						id: (payload.sub as string) || "",
-						name: (payload.name as string) || (payload.email as string) || "",
-						imageUrl: (payload.picture as string) || "",
-						email: (payload.email as string) || "",
-					};
-					// Prevent Google from auto-selecting this account again and
-					// remove any injected button elements immediately.
-					window.google?.accounts?.id?.disableAutoSelect?.();
-					setGoogleProfile(profile);
-					sessionStorage.setItem("google_profile", JSON.stringify(profile));
-					removeGoogleButtons();
-				},
-			});
-			renderGoogleButton();
-		};
-
-		if (window.google?.accounts?.id) {
-			init();
-			return;
-		}
-
-		const interval = setInterval(() => {
-			if (window.google?.accounts?.id) {
-				clearInterval(interval);
-				init();
-			}
-		}, 300);
-		return () => clearInterval(interval);
-	}, [decodeJwt, renderGoogleButton, googleProfile, removeGoogleButtons]);
-
-	// Ensure any stray Google button nodes are removed when a profile is set or cleared.
-	useEffect(() => {
-		if (googleProfile) removeGoogleButtons();
-	}, [googleProfile, removeGoogleButtons]);
-
-	// Observe DOM mutations to catch GIS injected nodes and remove them right away.
-	useEffect(() => {
-		const observer = new MutationObserver((mutations) => {
-			let removed = false;
-			for (const m of mutations) {
-				if (m.addedNodes && m.addedNodes.length) {
-					m.addedNodes.forEach((n) => {
-						try {
-							if (n instanceof HTMLElement) {
-								if (
-									n.classList.contains("g_id_signin") ||
-									n.id === "g_id_onload" ||
-									(n.id && n.id.startsWith("gsi_")) ||
-									(n instanceof HTMLIFrameElement && n.src && n.src.includes("accounts.google.com/gsi/button"))
-								) {
-									n.remove();
-									removed = true;
-								}
-							}
-						} catch {
-							// ignore
-						}
-					});
-				}
-			}
-			if (removed) {
-				const container = document.getElementById("gisButton");
-				if (container) container.innerHTML = "";
-			}
-		});
-
-		observer.observe(document.body, { childList: true, subtree: true });
-
-		const stopTimeout = setTimeout(() => observer.disconnect(), 10000);
-		if (googleProfile) {
-			observer.disconnect();
-			clearTimeout(stopTimeout);
-		}
-
-		return () => {
-			observer.disconnect();
-			clearTimeout(stopTimeout);
-		};
-	}, [googleProfile, removeGoogleButtons]);
-
-	/** ---------- Sign out ---------- */
+	/** ---------- Sign out handler ---------- */
 	const handleSignOut = () => {
-		window.google?.accounts?.id?.disableAutoSelect?.();
-		sessionStorage.removeItem("google_profile");
-		setGoogleProfile(null);
+		logout();
 		setProfileMenuOpen(false);
-		renderGoogleButton();
 	};
 
 	/** ---------- Render ---------- */
@@ -268,6 +80,7 @@ const Navbar = () => {
 								["/weather", "/cloudy-day.png", "Weather"],
 								["/seismic", "/waveform.png", "Seismic"],
 								["/retrieve", "/data-retrieval.png", "Data Retrieval"],
+								["/files", "/file-manager.png", "File Manager"],
 							].map(([href, icon, label]) => (
 								<Link
 									key={href}
@@ -290,26 +103,29 @@ const Navbar = () => {
 					Local Wisdom
 				</Link>
 
-				{/* Google Sign-In / Profile */}
+				{/* Authentication */}
 				<div className="flex items-center gap-1">
-					{googleProfile ? (
+					{loading ? (
+						<div className="text-sm text-gray-500">Loading...</div>
+					) : authenticated && user ? (
 						<div className="relative" ref={profileMenuRef}>
 							<button
 								onClick={() => setProfileMenuOpen((s) => !s)}
 								className="flex items-center gap-2 focus:outline-none"
 							>
-								<Image
-									src={googleProfile.imageUrl || "/icon.png"}
-									alt={googleProfile.name}
-									width={32}
-									height={32}
-									className="rounded-full"
-								/>
-								<span className="text-sm font-medium text-gray-700">{googleProfile.name}</span>
+								<div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+									{user.name ? user.name.charAt(0).toUpperCase() : user.username ? user.username.charAt(0).toUpperCase() : "U"}
+								</div>
+								<span className="text-sm font-medium text-gray-700">
+									{user.name || user.username || "User"}
+								</span>
 							</button>
 
 							{profileMenuOpen && (
-								<div className="absolute right-0 mt-2 bg-white border rounded shadow-md text-gray-700 py-1">
+								<div className="absolute right-0 mt-2 bg-white border rounded shadow-md text-gray-700 py-1 min-w-[120px]">
+									<div className="px-4 py-2 text-xs text-gray-500 border-b">
+										{user.email || user.username}
+									</div>
 									<button
 										onClick={handleSignOut}
 										className="w-full text-left px-4 py-2 hover:bg-gray-100"
@@ -320,7 +136,12 @@ const Navbar = () => {
 							)}
 						</div>
 					) : (
-						<div id="gisButton" />
+						<button
+							onClick={login}
+							className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium"
+						>
+							Sign In
+						</button>
 					)}
 				</div>
 			</div>
