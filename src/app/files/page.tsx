@@ -5,11 +5,31 @@ import Navbar from "../../components/Navbar";
 import FileExplorer from "../../components/FileExplorer";
 import FileUpload from '../../components/FileUpload';
 import FilePreview from '../../components/FilePreview';
-import { getBuckets, getFiles, uploadFile, deleteFile, downloadFile, createFolder, FileItem, Bucket } from '../../actions/files';
+import { getBuckets, getFiles, uploadFile, deleteFile, downloadFile, createFolder, FileItem, Bucket, createUserPermissions } from '../../actions/files';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function FilesPage() {
-	const { authenticated, loading: authLoading, canReadFiles, canWriteFiles, canDeleteFiles } = useAuth();
+	const { 
+		authenticated, 
+		loading: authLoading, 
+		canReadFiles, 
+		canWriteFiles, 
+		canDeleteFiles,
+		canReadFromBucket,
+		canWriteToBucket,
+		canDeleteFromBucket,
+		getReadableBuckets,
+		getWritableBuckets 
+	} = useAuth();
+
+	// Create user permissions object once
+	const userPermissions = createUserPermissions({
+		getReadableBuckets,
+		getWritableBuckets,
+		canReadFromBucket,
+		canWriteToBucket,
+		canDeleteFromBucket
+	});
 	const [buckets, setBuckets] = useState<Bucket[]>([]);
 	const [selectedBucket, setSelectedBucket] = useState<Bucket | null>(null);
 	const [files, setFiles] = useState<FileItem[]>([]);
@@ -26,7 +46,7 @@ export default function FilesPage() {
 		const fetchBuckets = async () => {
 			try {
 				setIsLoading(true);
-				const bucketsData = await getBuckets();
+				const bucketsData = await getBuckets(userPermissions);
 				setBuckets(bucketsData);
 				if (bucketsData.length > 0) {
 					setSelectedBucket(bucketsData[0]);
@@ -102,7 +122,7 @@ export default function FilesPage() {
 		try {
 			setIsLoading(true);
 			setError(null);
-			const filesData = await getFiles(selectedBucket.name, currentPath);
+			const filesData = await getFiles(selectedBucket.name, currentPath, userPermissions);
 			setFiles(filesData);
 		} catch (error) {
 			console.error('Failed to load files:', error);
@@ -131,12 +151,18 @@ export default function FilesPage() {
 	};
 
 	const handleUpload = async (files: File[]) => {
-		if (!selectedBucket || !canWriteFiles()) return;
+		if (!selectedBucket) return;
+		
+		// Check bucket-specific write permissions
+		if (!canWriteToBucket(selectedBucket.name)) {
+			setError(`You don't have permission to upload files to the "${selectedBucket.name}" bucket.`);
+			return;
+		}
 
 		try {
 			setIsLoading(true);
 			for (const file of files) {
-				await uploadFile(selectedBucket.name, currentPath, file);
+				await uploadFile(selectedBucket.name, currentPath, file, userPermissions);
 			}
 			await loadFiles();
 			setShowUpload(false);
@@ -149,14 +175,20 @@ export default function FilesPage() {
 	};
 
 	const handleDelete = async (fileName: string) => {
-		if (!selectedBucket || !canDeleteFiles()) return;
+		if (!selectedBucket) return;
+		
+		// Check bucket-specific delete permissions
+		if (!canDeleteFromBucket(selectedBucket.name)) {
+			setError(`You don't have permission to delete files from the "${selectedBucket.name}" bucket.`);
+			return;
+		}
 
 		if (!confirm(`Are you sure you want to delete "${fileName}"?`)) return;
 
 		try {
 			setIsLoading(true);
 			const fullPath = currentPath ? `${currentPath}/${fileName}` : fileName;
-			await deleteFile(selectedBucket.name, fullPath);
+			await deleteFile(selectedBucket.name, fullPath, userPermissions);
 			await loadFiles();
 			if (selectedFile?.name === fileName) {
 				setSelectedFile(null);
@@ -175,7 +207,7 @@ export default function FilesPage() {
 
 		try {
 			const fullPath = currentPath ? `${currentPath}/${fileName}` : fileName;
-			await downloadFile(selectedBucket.name, fullPath);
+			await downloadFile(selectedBucket.name, fullPath, userPermissions);
 		} catch (error) {
 			console.error('Failed to download file:', error);
 			setError('Failed to download file');
@@ -188,7 +220,7 @@ export default function FilesPage() {
 		try {
 			setIsLoading(true);
 			const fullPath = currentPath ? `${currentPath}/${folderName}` : folderName;
-			await createFolder(selectedBucket.name, fullPath);
+			await createFolder(selectedBucket.name, fullPath, userPermissions);
 			await loadFiles();
 		} catch (error) {
 			console.error('Failed to create folder:', error);
@@ -262,8 +294,8 @@ export default function FilesPage() {
 							onDelete={handleDelete}
 							onDownload={handleDownload}
 							onCreateFolder={handleCreateFolder}
-							canWrite={canWriteFiles()}
-							canDelete={canDeleteFiles()}
+							canWrite={selectedBucket ? canWriteToBucket(selectedBucket.name) : false}
+							canDelete={selectedBucket ? canDeleteFromBucket(selectedBucket.name) : false}
 						/>
 					</div>
 
@@ -280,7 +312,7 @@ export default function FilesPage() {
 								}}
 								onDownload={() => handleDownload(selectedFile.name)}
 								onDelete={() => handleDelete(selectedFile.name)}
-								canDelete={canDeleteFiles()}
+								canDelete={selectedBucket ? canDeleteFromBucket(selectedBucket.name) : false}
 							/>
 						) : (
 							<div className="text-center text-gray-400 mt-8">

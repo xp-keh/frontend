@@ -15,6 +15,7 @@ interface AuthContextType {
     lastName?: string;
     name?: string;
     roles?: string[];
+    roleAttributes?: Record<string, Record<string, string[]>>;
   } | null;
   login: () => void;
   logout: () => void;
@@ -24,6 +25,11 @@ interface AuthContextType {
   canReadFiles: () => boolean;
   canWriteFiles: () => boolean;
   canDeleteFiles: () => boolean;
+  canReadFromBucket: (bucketName: string) => boolean;
+  canWriteToBucket: (bucketName: string) => boolean;
+  canDeleteFromBucket: (bucketName: string) => boolean;
+  getReadableBuckets: () => string[];
+  getWritableBuckets: () => string[];
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -60,6 +66,67 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const clientRoles = tokenParsed.resource_access?.[clientId]?.roles || [];
           const allRoles = [...realmRoles, ...clientRoles];
           
+          // Extract role attributes from the token (now working!)
+          const roleAttributes: Record<string, Record<string, string[]>> = {};
+          
+          // Method 1: Check if roleAttributes exist directly in token
+          if (tokenParsed.roleAttributes) {
+            Object.assign(roleAttributes, tokenParsed.roleAttributes);
+          }
+          
+          // Method 2: Check each role as a direct property in the token
+          allRoles.forEach(role => {
+            if (tokenParsed[role] && typeof tokenParsed[role] === 'object') {
+              roleAttributes[role] = {};
+              
+              // Extract read_bucket and write_bucket attributes
+              if (tokenParsed[role].read_bucket) {
+                roleAttributes[role].read_bucket = Array.isArray(tokenParsed[role].read_bucket) 
+                  ? tokenParsed[role].read_bucket 
+                  : [tokenParsed[role].read_bucket];
+              }
+              
+              if (tokenParsed[role].write_bucket) {
+                roleAttributes[role].write_bucket = Array.isArray(tokenParsed[role].write_bucket) 
+                  ? tokenParsed[role].write_bucket 
+                  : [tokenParsed[role].write_bucket];
+              }
+              
+              // Extract any other attributes
+              Object.entries(tokenParsed[role]).forEach(([key, value]) => {
+                if (key !== 'read_bucket' && key !== 'write_bucket') {
+                  roleAttributes[role][key] = Array.isArray(value) ? value : [value];
+                }
+              });
+            }
+          });
+          
+          // Method 3: Fallback - if no attributes found, add temporary hardcoded values for testing
+          if (Object.keys(roleAttributes).length === 0) {
+            allRoles.forEach(role => {
+              switch (role) {
+                case 'user_seismic':
+                  roleAttributes[role] = {
+                    read_bucket: ['seismic'],
+                    write_bucket: ['seismic']
+                  };
+                  break;
+                case 'user_weather':
+                  roleAttributes[role] = {
+                    read_bucket: ['weather'],
+                    write_bucket: ['weather']
+                  };
+                  break;
+                case 'admin':
+                  roleAttributes[role] = {
+                    read_bucket: ['*'],
+                    write_bucket: ['*']
+                  };
+                  break;
+              }
+            });
+          }
+          
           const userInfo = {
             id: tokenParsed.sub,
             username: tokenParsed.preferred_username,
@@ -68,6 +135,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             lastName: tokenParsed.family_name,
             name: tokenParsed.name || `${tokenParsed.given_name || ''} ${tokenParsed.family_name || ''}`.trim() || tokenParsed.preferred_username,
             roles: allRoles,
+            roleAttributes: roleAttributes,
           };
           
           setUser(userInfo);
@@ -117,15 +185,166 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // File manager specific permissions
   const canReadFiles = (): boolean => {
-    return hasAnyRole(['file-manager-read', 'file-manager-write', 'file-manager-admin', 'admin']);
+    // If user has global write permission, they automatically get read permission
+    if (hasAnyRole(['user_writer', 'user_weather', 'user_seismic'])) {
+      return true;
+    }
+    // Otherwise check for explicit read permissions
+    return hasAnyRole(['user_reader']);
   };
 
   const canWriteFiles = (): boolean => {
-    return hasAnyRole(['file-manager-write', 'file-manager-admin', 'admin']);
+    return hasAnyRole(['user_writer', 'user_weather', 'user_seismic']);
   };
 
   const canDeleteFiles = (): boolean => {
     return hasAnyRole(['file-manager-admin', 'admin']);
+  };
+
+  // Bucket-specific permissions based on role attributes
+  // Helper function to check if user has write access to a bucket (without checking read permissions)
+  const hasWriteAccessToBucket = (bucketName: string): boolean => {
+    // Admin and file-manager-admin can write to any bucket
+    if (hasAnyRole(['file-manager-admin', 'admin'])) {
+      return true;
+    }
+
+    // Global write permission - user_writer can write to all buckets
+    if (hasRole('user_writer')) {
+      return true;
+    }
+
+    if (!user?.roleAttributes || Object.keys(user.roleAttributes).length === 0) {
+      return hasRole('file-manager-write');
+    }
+
+    // Check role attributes for write_bucket permissions
+    const writableBuckets = getWritableBuckets();
+    return writableBuckets.includes(bucketName) || writableBuckets.includes('*');
+  };
+
+  // Helper function to check if user has read access to a bucket (without checking write permissions)
+  const hasReadAccessToBucket = (bucketName: string): boolean => {
+    // Admin and file-manager-admin can read from any bucket
+    if (hasAnyRole(['file-manager-admin', 'admin'])) {
+      return true;
+    }
+
+    // Global read permission - user_reader can read from all buckets
+    if (hasRole('user_reader')) {
+      return true;
+    }
+
+    if (!user?.roleAttributes || Object.keys(user.roleAttributes).length === 0) {
+      return hasRole('file-manager-read');
+    }
+
+    // Check role attributes for read_bucket permissions only
+    if (!user?.roleAttributes) {
+      return false;
+    }
+
+    const readableBuckets: string[] = [];
+    Object.entries(user.roleAttributes).forEach(([roleName, attributes]) => {
+      if (attributes.read_bucket) {
+        const buckets = Array.isArray(attributes.read_bucket) 
+          ? attributes.read_bucket 
+          : [attributes.read_bucket];
+        readableBuckets.push(...buckets);
+      }
+    });
+
+    const uniqueBuckets = [...new Set(readableBuckets)];
+    return uniqueBuckets.includes(bucketName) || uniqueBuckets.includes('*');
+  };
+
+  const canReadFromBucket = (bucketName: string): boolean => {
+    // If user has write access to this bucket, they automatically get read permission
+    if (hasWriteAccessToBucket(bucketName)) {
+      return true;
+    }
+
+    // Otherwise check for explicit read permissions
+    return hasReadAccessToBucket(bucketName);
+  };
+
+  const canWriteToBucket = (bucketName: string): boolean => {
+    return hasWriteAccessToBucket(bucketName);
+  };
+
+  const canDeleteFromBucket = (bucketName: string): boolean => {
+    // Only admin and file-manager-admin can delete, regardless of bucket
+    // You could extend this to check for delete_bucket attributes if needed
+    return hasAnyRole(['file-manager-admin', 'admin']);
+  };
+
+  const getReadableBuckets = (): string[] => {
+    // Check for global write permission first - if user can write to all, they can read from all
+    if (hasRole('user_writer')) {
+      return ['*']; // Wildcard means can read from all buckets
+    }
+
+    // Check for global read permission
+    if (hasRole('user_reader')) {
+      return ['*']; // Wildcard means can read from all buckets
+    }
+
+    if (!user?.roleAttributes) {
+      return [];
+    }
+
+    const readableBuckets: string[] = [];
+
+    // Iterate through all role attributes to find read_bucket and write_bucket attributes
+    Object.entries(user.roleAttributes).forEach(([roleName, attributes]) => {
+      // Add buckets from read_bucket attributes
+      if (attributes.read_bucket) {
+        const buckets = Array.isArray(attributes.read_bucket) 
+          ? attributes.read_bucket 
+          : [attributes.read_bucket];
+        readableBuckets.push(...buckets);
+      }
+      
+      // Add buckets from write_bucket attributes (write permission grants read permission)
+      if (attributes.write_bucket) {
+        const buckets = Array.isArray(attributes.write_bucket) 
+          ? attributes.write_bucket 
+          : [attributes.write_bucket];
+        readableBuckets.push(...buckets);
+      }
+    });
+
+    // Remove duplicates and return
+    const uniqueBuckets = [...new Set(readableBuckets)];
+    return uniqueBuckets;
+  };
+
+  const getWritableBuckets = (): string[] => {
+    // Check for global write permission first
+    if (hasRole('user_writer')) {
+      return ['*']; // Wildcard means can write to all buckets
+    }
+
+    if (!user?.roleAttributes) {
+      return [];
+    }
+
+    const writableBuckets: string[] = [];
+
+    // Iterate through all role attributes to find write_bucket attributes
+    Object.entries(user.roleAttributes).forEach(([roleName, attributes]) => {
+      if (attributes.write_bucket) {
+        // write_bucket can be an array of bucket names or a single string
+        const buckets = Array.isArray(attributes.write_bucket) 
+          ? attributes.write_bucket 
+          : [attributes.write_bucket];
+        writableBuckets.push(...buckets);
+      }
+    });
+
+    // Remove duplicates and return
+    const uniqueBuckets = [...new Set(writableBuckets)];
+    return uniqueBuckets;
   };
 
   const value: AuthContextType = {
@@ -141,6 +360,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     canReadFiles,
     canWriteFiles,
     canDeleteFiles,
+    canReadFromBucket,
+    canWriteToBucket,
+    canDeleteFromBucket,
+    getReadableBuckets,
+    getWritableBuckets,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
