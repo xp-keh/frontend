@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FileItem, formatFileSize, getFileTypeIcon } from '@/actions/files';
+import { LegacyFileItem as FileItem, formatFileSize, getFileTypeIcon } from '@/actions/files';
 
 interface FileExplorerProps {
   files: FileItem[];
@@ -14,7 +14,7 @@ interface FileExplorerProps {
   onUpload: () => void;
   onDelete: (fileName: string) => void;
   onDownload: (fileName: string) => void;
-  onCreateFolder: (folderName: string) => void;
+  onFolderUpload: () => void;
   canWrite?: boolean;
   canDelete?: boolean;
 }
@@ -30,13 +30,11 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
   onUpload,
   onDelete,
   onDownload,
-  onCreateFolder,
+  onFolderUpload,
   canWrite = false,
   canDelete = false,
 }) => {
   const [selectedFileName, setSelectedFileName] = useState<string>('');
-  const [showCreateFolder, setShowCreateFolder] = useState<boolean>(false);
-  const [newFolderName, setNewFolderName] = useState<string>('');
   const [sortBy, setSortBy] = useState<'name' | 'size' | 'date'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
@@ -46,14 +44,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     
     if (file.isFolder) {
       onFolderOpen(file.name);
-    }
-  };
-
-  const handleCreateFolder = () => {
-    if (newFolderName.trim()) {
-      onCreateFolder(newFolderName.trim());
-      setNewFolderName('');
-      setShowCreateFolder(false);
     }
   };
 
@@ -147,7 +137,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
           </button>
           
           <button
-            onClick={() => setShowCreateFolder(true)}
+            onClick={onFolderUpload}
             className="flex items-center gap-2 px-4 py-2 bg-[#1d1f2b] hover:bg-[#2a2d3e] border border-[#444654] text-white font-medium rounded transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,44 +145,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
             </svg>
             New Folder
           </button>
-        </div>
-      )}
-
-      {/* Create folder input */}
-      {showCreateFolder && canWrite && (
-        <div className="mb-6 p-4 bg-[#1d1f2b] border border-[#444654] rounded-lg">
-          <div className="flex gap-3">
-            <input
-              type="text"
-              value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              placeholder="Enter folder name"
-              className="flex-1 px-3 py-2 bg-[#2a2d3e] border border-[#444654] rounded text-white placeholder-gray-400"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCreateFolder();
-                if (e.key === 'Escape') {
-                  setShowCreateFolder(false);
-                  setNewFolderName('');
-                }
-              }}
-              autoFocus
-            />
-            <button
-              onClick={handleCreateFolder}
-              className="px-4 py-2 bg-[#1d1f2b] hover:bg-[#2a2d3e] border border-[#444654] text-white font-medium rounded transition-colors"
-            >
-              Create
-            </button>
-            <button
-              onClick={() => {
-                setShowCreateFolder(false);
-                setNewFolderName('');
-              }}
-              className="px-4 py-2 bg-[#1d1f2b] hover:bg-[#2a2d3e] border border-[#444654] text-gray-300 font-medium rounded transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
         </div>
       )}
 

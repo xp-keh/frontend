@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileItem, formatFileSize, getFileTypeIcon, getFilePreview } from '@/actions/files';
+import { LegacyFileItem as FileItem, formatFileSize, getFileTypeIcon, getFilePreview } from '@/actions/files';
 
 interface FilePreviewProps {
   file: FileItem;
@@ -25,23 +25,43 @@ const FilePreview: React.FC<FilePreviewProps> = ({
   const [previewData, setPreviewData] = useState<any>(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     if (file && !file.isFolder) {
       loadPreview();
     }
-  }, [file]);
+  }, [file, currentPage]);
 
   const loadPreview = async () => {
     try {
       setIsLoadingPreview(true);
       setPreviewError(null);
       const fullPath = currentPath ? `${currentPath}/${file.name}` : file.name;
-      const preview = await getFilePreview(bucketName, fullPath);
+      
+      // Configure preview options based on file type
+      const options: any = {
+        preview: true,
+        format: 'auto',
+        quality: 80,
+        maxWidth: 800,
+        maxHeight: 600,
+        maxSize: 10, // 10MB max for preview
+        maxResponseSize: 5, // 5MB max response size
+        compress: true
+      };
+
+      // For PDFs, include page number
+      if (isPdfFile(file.name)) {
+        options.page = currentPage;
+        options.format = 'text'; // Get text content for PDFs
+      }
+
+      const preview = await getFilePreview(bucketName, fullPath, undefined, options);
       setPreviewData(preview);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load preview:', error);
-      setPreviewError('Failed to load preview');
+      setPreviewError(error.message || 'Failed to load preview');
     } finally {
       setIsLoadingPreview(false);
     }
@@ -52,7 +72,7 @@ const FilePreview: React.FC<FilePreviewProps> = ({
   };
 
   const isImageFile = (fileName: string): boolean => {
-    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp'];
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'bmp', 'tiff'];
     return imageExtensions.includes(getFileExtension(fileName));
   };
 
@@ -63,6 +83,185 @@ const FilePreview: React.FC<FilePreviewProps> = ({
 
   const isPdfFile = (fileName: string): boolean => {
     return getFileExtension(fileName) === 'pdf';
+  };
+
+  const renderImagePreview = () => {
+    if (previewData?.content?.base64) {
+      return (
+        <div className="flex flex-col items-center">
+          <img
+            src={previewData.content.dataUrl}
+            alt={file.name}
+            className="max-w-full max-h-96 rounded-lg shadow-lg"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              setPreviewError('Failed to load image');
+            }}
+          />
+          {previewData.content.optimized && (
+            <div className="mt-2 text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded">
+              Optimized: {previewData.content.compressionRatio} size reduction
+            </div>
+          )}
+          {previewData.metadata?.dimensions && (
+            <div className="mt-1 text-xs text-gray-400">
+              {previewData.metadata.dimensions.width} × {previewData.metadata.dimensions.height}
+            </div>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const renderPdfPreview = () => {
+    if (previewData?.content?.text) {
+      const { content, metadata } = previewData;
+      return (
+        <div className="space-y-4">
+          {/* PDF Page Navigation */}
+          {metadata?.pages > 1 && (
+            <div className="flex items-center justify-between bg-gray-800 p-3 rounded-lg">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage <= 1 || isLoadingPreview}
+                className="px-3 py-1 bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
+              >
+                Previous
+              </button>
+              <span className="text-sm text-gray-300">
+                Page {currentPage} of {metadata.pages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(Math.min(metadata.pages, currentPage + 1))}
+                disabled={currentPage >= metadata.pages || isLoadingPreview}
+                className="px-3 py-1 bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
+              >
+                Next
+              </button>
+            </div>
+          )}
+          
+          {/* PDF Text Content */}
+          <div className="bg-gray-800 rounded-lg p-4 max-h-96 overflow-y-auto">
+            <pre className="text-sm text-gray-300 whitespace-pre-wrap font-sans">
+              {content.text}
+            </pre>
+            {content.truncated && (
+              <div className="mt-4 p-3 bg-yellow-900/30 border border-yellow-600/50 rounded text-yellow-200 text-sm">
+                <strong>Note:</strong> Content was truncated. {content.note}
+              </div>
+            )}
+          </div>
+          
+          {/* PDF Metadata */}
+          {metadata && (
+            <div className="text-xs text-gray-400 bg-gray-800 p-3 rounded-lg">
+              <div className="grid grid-cols-2 gap-2">
+                <div>Pages: {metadata.pages}</div>
+                <div>Word Count: {content.wordCount}</div>
+                <div>Version: {metadata.version}</div>
+                <div>Characters: {content.characterCount}</div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const renderTextPreview = () => {
+    if (previewData?.content) {
+      const content = previewData.content;
+      
+      if (content.rows && Array.isArray(content.rows)) {
+        // CSV data
+        return (
+          <div className="space-y-4">
+            {content.limited && (
+              <div className="p-3 bg-yellow-900/30 border border-yellow-600/50 rounded text-yellow-200 text-sm">
+                <strong>Note:</strong> {content.note}
+              </div>
+            )}
+            <div className="overflow-x-auto max-h-96 bg-gray-800 rounded-lg">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-700 sticky top-0">
+                  <tr>
+                    {content.headers?.map((header: string, idx: number) => (
+                      <th key={idx} className="px-3 py-2 text-left text-gray-200 border-b border-gray-600">
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {content.rows.slice(0, 50).map((row: any, idx: number) => (
+                    <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-800' : 'bg-gray-750'}>
+                      {content.headers?.map((header: string, cellIdx: number) => (
+                        <td key={cellIdx} className="px-3 py-2 text-gray-300 border-b border-gray-700">
+                          {row[header] || ''}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      } else if (content.lines && Array.isArray(content.lines)) {
+        // Log/text file with lines
+        return (
+          <div className="space-y-4">
+            {content.limited && (
+              <div className="p-3 bg-yellow-900/30 border border-yellow-600/50 rounded text-yellow-200 text-sm">
+                <strong>Note:</strong> {content.note}
+              </div>
+            )}
+            <div className="bg-gray-800 rounded-lg p-4 max-h-96 overflow-y-auto">
+              <pre className="text-sm text-gray-300 whitespace-pre-wrap">
+                {content.lines.join('\n')}
+              </pre>
+            </div>
+          </div>
+        );
+      } else if (typeof content === 'object') {
+        // JSON data
+        return (
+          <div className="space-y-4">
+            {content.truncated && (
+              <div className="p-3 bg-yellow-900/30 border border-yellow-600/50 rounded text-yellow-200 text-sm">
+                <strong>Note:</strong> {content.note}
+              </div>
+            )}
+            <div className="bg-gray-800 rounded-lg p-4 max-h-96 overflow-y-auto">
+              <pre className="text-sm text-gray-300 whitespace-pre-wrap">
+                {JSON.stringify(content, null, 2)}
+              </pre>
+            </div>
+          </div>
+        );
+      } else {
+        // Plain text
+        const textContent = content.raw || content;
+        return (
+          <div className="space-y-4">
+            {content.truncated && (
+              <div className="p-3 bg-yellow-900/30 border border-yellow-600/50 rounded text-yellow-200 text-sm">
+                <strong>Note:</strong> {content.note}
+              </div>
+            )}
+            <div className="bg-gray-800 rounded-lg p-4 max-h-96 overflow-y-auto">
+              <pre className="text-sm text-gray-300 whitespace-pre-wrap">
+                {textContent}
+              </pre>
+            </div>
+          </div>
+        );
+      }
+    }
+    return null;
   };
 
   const renderPreview = () => {
@@ -83,51 +282,44 @@ const FilePreview: React.FC<FilePreviewProps> = ({
           <svg className="w-12 h-12 mb-2" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"></path>
           </svg>
-          <p>{previewError}</p>
+          <p className="text-center mb-2">{previewError}</p>
+          {previewError.includes('too large') && (
+            <div className="text-sm text-gray-500 text-center">
+              <p>Try downloading the file instead</p>
+              <p>or the file may be too large for preview</p>
+            </div>
+          )}
         </div>
       );
     }
 
-    if (isImageFile(file.name)) {
+    if (!previewData) {
       return (
-        <div className="flex justify-center">
-          <img
-            src={previewData?.url || `/api/files/${bucketName}/${currentPath ? currentPath + '/' : ''}${file.name}`}
-            alt={file.name}
-            className="max-w-full max-h-64 rounded-lg"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              setPreviewError('Failed to load image');
-            }}
-          />
+        <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+          <div className="text-6xl mb-4">{getFileTypeIcon(file.name, file.isFolder)}</div>
+          <p>No preview available</p>
         </div>
       );
     }
 
-    if (isTextFile(file.name) && previewData?.content) {
-      return (
-        <div className="bg-gray-800 rounded-lg p-4 max-h-64 overflow-y-auto">
-          <pre className="text-sm text-gray-300 whitespace-pre-wrap">{previewData.content}</pre>
-        </div>
-      );
+    // Handle different preview types based on the backend response
+    if (previewData.type === 'image' && isImageFile(file.name)) {
+      return renderImagePreview();
     }
 
-    if (isPdfFile(file.name)) {
-      return (
-        <div className="text-center">
-          <svg className="w-16 h-16 mx-auto mb-4 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd"></path>
-          </svg>
-          <p className="text-gray-400">PDF Document</p>
-          <p className="text-sm text-gray-500">Click download to view</p>
-        </div>
-      );
+    if ((previewData.type === 'pdf-page-text' || previewData.type === 'pdf-binary') && isPdfFile(file.name)) {
+      return renderPdfPreview();
     }
 
+    if ((previewData.type === 'text' || previewData.type === 'csv' || previewData.type === 'json' || previewData.type === 'log') && isTextFile(file.name)) {
+      return renderTextPreview();
+    }
+
+    // Fallback for unsupported file types
     return (
       <div className="flex flex-col items-center justify-center h-64 text-gray-400">
         <div className="text-6xl mb-4">{getFileTypeIcon(file.name, file.isFolder)}</div>
-        <p>No preview available</p>
+        <p>Preview not supported for this file type</p>
         <p className="text-sm text-gray-500">Click download to view file</p>
       </div>
     );
@@ -179,6 +371,61 @@ const FilePreview: React.FC<FilePreviewProps> = ({
         </div>
       </div>
 
+      {/* Preview Controls */}
+      {(isPdfFile(file.name) || isImageFile(file.name)) && (
+        <div className="mb-4 p-3 bg-[#1d1f2b] border border-[#444654] rounded-lg">
+          <h4 className="text-sm font-medium text-gray-300 mb-2">Preview Options</h4>
+          <div className="flex gap-2 flex-wrap">
+            {isPdfFile(file.name) && (
+              <button
+                onClick={() => {
+                  setCurrentPage(1);
+                  loadPreview();
+                }}
+                disabled={isLoadingPreview}
+                className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-white rounded disabled:opacity-50"
+              >
+                Refresh Text
+              </button>
+            )}
+            {isImageFile(file.name) && (
+              <>
+                <button
+                  onClick={() => {
+                    const fullPath = currentPath ? `${currentPath}/${file.name}` : file.name;
+                    getFilePreview(bucketName, fullPath, undefined, {
+                      preview: false,
+                      format: 'base64',
+                      quality: 100
+                    }).then(setPreviewData);
+                  }}
+                  disabled={isLoadingPreview}
+                  className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-white rounded disabled:opacity-50"
+                >
+                  Full Quality
+                </button>
+                <button
+                  onClick={() => {
+                    const fullPath = currentPath ? `${currentPath}/${file.name}` : file.name;
+                    getFilePreview(bucketName, fullPath, undefined, {
+                      preview: true,
+                      format: 'base64',
+                      quality: 50,
+                      maxWidth: 400,
+                      maxHeight: 300
+                    }).then(setPreviewData);
+                  }}
+                  disabled={isLoadingPreview}
+                  className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-white rounded disabled:opacity-50"
+                >
+                  Small Preview
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Preview */}
       <div className="flex-1 mb-6">
         <h4 className="text-sm font-medium text-gray-300 mb-3">File Preview</h4>
@@ -218,26 +465,146 @@ const FilePreview: React.FC<FilePreviewProps> = ({
 
       {/* File Metadata */}
       <div className="mt-6 p-4 bg-[#1d1f2b] border border-[#444654] rounded-lg">
-        <h4 className="font-medium text-white mb-2">File Information</h4>
-        <div className="text-sm text-gray-400 space-y-1">
+        <h4 className="font-medium text-white mb-3">File Information</h4>
+        <div className="text-sm text-gray-400 space-y-2">
           <div className="flex justify-between">
-            <span>Created:</span>
+            <span>Size:</span>
+            <span>{formatFileSize(file.size)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Modified:</span>
             <span>{new Date(file.lastModified).toLocaleString()}</span>
           </div>
           <div className="flex justify-between">
             <span>Extension:</span>
             <span>{getFileExtension(file.name) || 'No extension'}</span>
           </div>
+          <div className="flex justify-between">
+            <span>Type:</span>
+            <span>{previewData?.type || 'Unknown'}</span>
+          </div>
+          
+          {/* Enhanced metadata from backend */}
           {previewData?.metadata && (
             <>
-              <div className="flex justify-between">
-                <span>Encoding:</span>
-                <span>{previewData.metadata.encoding || 'Unknown'}</span>
-              </div>
-              {previewData.metadata.dimensions && (
+              {previewData.metadata.contentType && (
                 <div className="flex justify-between">
-                  <span>Dimensions:</span>
-                  <span>{previewData.metadata.dimensions}</span>
+                  <span>Content Type:</span>
+                  <span>{previewData.metadata.contentType}</span>
+                </div>
+              )}
+              {previewData.metadata.encoding && (
+                <div className="flex justify-between">
+                  <span>Encoding:</span>
+                  <span>{previewData.metadata.encoding}</span>
+                </div>
+              )}
+              
+              {/* Image-specific metadata */}
+              {previewData.metadata.dimensions && (
+                <>
+                  <div className="flex justify-between">
+                    <span>Dimensions:</span>
+                    <span>{previewData.metadata.dimensions.width} × {previewData.metadata.dimensions.height}</span>
+                  </div>
+                  {previewData.metadata.format && (
+                    <div className="flex justify-between">
+                      <span>Image Format:</span>
+                      <span>{previewData.metadata.format.toUpperCase()}</span>
+                    </div>
+                  )}
+                  {previewData.metadata.channels && (
+                    <div className="flex justify-between">
+                      <span>Channels:</span>
+                      <span>{previewData.metadata.channels}</span>
+                    </div>
+                  )}
+                  {previewData.metadata.hasAlpha !== undefined && (
+                    <div className="flex justify-between">
+                      <span>Has Alpha:</span>
+                      <span>{previewData.metadata.hasAlpha ? 'Yes' : 'No'}</span>
+                    </div>
+                  )}
+                </>
+              )}
+              
+              {/* PDF-specific metadata */}
+              {previewData.metadata.pages && (
+                <>
+                  <div className="flex justify-between">
+                    <span>Total Pages:</span>
+                    <span>{previewData.metadata.pages}</span>
+                  </div>
+                  {previewData.metadata.version && (
+                    <div className="flex justify-between">
+                      <span>PDF Version:</span>
+                      <span>{previewData.metadata.version}</span>
+                    </div>
+                  )}
+                  {previewData.metadata.info?.Title && (
+                    <div className="flex justify-between">
+                      <span>Title:</span>
+                      <span className="text-right max-w-48 truncate">{previewData.metadata.info.Title}</span>
+                    </div>
+                  )}
+                  {previewData.metadata.info?.Author && (
+                    <div className="flex justify-between">
+                      <span>Author:</span>
+                      <span className="text-right max-w-48 truncate">{previewData.metadata.info.Author}</span>
+                    </div>
+                  )}
+                </>
+              )}
+              
+              {/* Compression information */}
+              {previewData.metadata.compressed && (
+                <>
+                  <div className="flex justify-between">
+                    <span>Optimized:</span>
+                    <span>Yes</span>
+                  </div>
+                  {previewData.metadata.compressionRatio && (
+                    <div className="flex justify-between">
+                      <span>Size Reduction:</span>
+                      <span>{previewData.metadata.compressionRatio}</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </>
+          )}
+          
+          {/* Content-specific information */}
+          {previewData?.content && (
+            <>
+              {previewData.content.wordCount && (
+                <div className="flex justify-between">
+                  <span>Word Count:</span>
+                  <span>{previewData.content.wordCount.toLocaleString()}</span>
+                </div>
+              )}
+              {previewData.content.characterCount && (
+                <div className="flex justify-between">
+                  <span>Character Count:</span>
+                  <span>{previewData.content.characterCount.toLocaleString()}</span>
+                </div>
+              )}
+              {previewData.content.lineCount && (
+                <div className="flex justify-between">
+                  <span>Line Count:</span>
+                  <span>{previewData.content.lineCount.toLocaleString()}</span>
+                </div>
+              )}
+              {previewData.content.totalRows && (
+                <div className="flex justify-between">
+                  <span>Total Rows:</span>
+                  <span>{previewData.content.totalRows.toLocaleString()}</span>
+                </div>
+              )}
+              {previewData.content.headers && (
+                <div className="flex justify-between">
+                  <span>CSV Columns:</span>
+                  <span>{previewData.content.headers.length}</span>
                 </div>
               )}
             </>

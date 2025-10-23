@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import Navbar from "../../components/Navbar";
 import FileExplorer from "../../components/FileExplorer";
 import FileUpload from '../../components/FileUpload';
+import FolderUpload from '../../components/FolderUpload';
 import FilePreview from '../../components/FilePreview';
-import { getBuckets, getFiles, uploadFile, deleteFile, downloadFile, createFolder, FileItem, Bucket, createUserPermissions } from '../../actions/files';
+import { getBuckets, getFiles, uploadFile, deleteFile, downloadFileFromPath as downloadFile, LegacyFileItem as FileItem, Bucket, createUserPermissions } from '../../actions/files';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function FilesPage() {
@@ -38,6 +39,7 @@ export default function FilesPage() {
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
 	const [showUpload, setShowUpload] = useState<boolean>(false);
+	const [showFolderUpload, setShowFolderUpload] = useState<boolean>(false);
 	const [showPreview, setShowPreview] = useState<boolean>(false);
 
 	useEffect(() => {
@@ -46,14 +48,17 @@ export default function FilesPage() {
 		const fetchBuckets = async () => {
 			try {
 				setIsLoading(true);
+				setError(null); // Clear previous errors
+				console.log('🔄 Starting to fetch buckets...');
 				const bucketsData = await getBuckets(userPermissions);
+				console.log('✅ Successfully fetched buckets:', bucketsData);
 				setBuckets(bucketsData);
 				if (bucketsData.length > 0) {
 					setSelectedBucket(bucketsData[0]);
 				}
 			} catch (error) {
-				console.error('Failed to load buckets:', error);
-				setError('Failed to load buckets');
+				console.error('❌ Failed to load buckets:', error);
+				setError(`Failed to load buckets: ${error instanceof Error ? error.message : 'Unknown error'}`);
 			} finally {
 				setIsLoading(false);
 			}
@@ -122,11 +127,13 @@ export default function FilesPage() {
 		try {
 			setIsLoading(true);
 			setError(null);
+			console.log(`🔄 Loading files from bucket: ${selectedBucket.name}, path: ${currentPath}`);
 			const filesData = await getFiles(selectedBucket.name, currentPath, userPermissions);
+			console.log('✅ Successfully loaded files:', filesData);
 			setFiles(filesData);
 		} catch (error) {
-			console.error('Failed to load files:', error);
-			setError('Failed to load files');
+			console.error('❌ Failed to load files:', error);
+			setError(`Failed to load files: ${error instanceof Error ? error.message : 'Unknown error'}`);
 		} finally {
 			setIsLoading(false);
 		}
@@ -162,7 +169,7 @@ export default function FilesPage() {
 		try {
 			setIsLoading(true);
 			for (const file of files) {
-				await uploadFile(selectedBucket.name, currentPath, file, userPermissions);
+				await uploadFile(selectedBucket.name, file, currentPath, userPermissions);
 			}
 			await loadFiles();
 			setShowUpload(false);
@@ -214,17 +221,23 @@ export default function FilesPage() {
 		}
 	};
 
-	const handleCreateFolder = async (folderName: string) => {
+	const handleFolderUpload = async (folderName: string, files: File[]) => {
 		if (!selectedBucket || !canWriteFiles()) return;
 
 		try {
 			setIsLoading(true);
-			const fullPath = currentPath ? `${currentPath}/${folderName}` : folderName;
-			await createFolder(selectedBucket.name, fullPath, userPermissions);
+			const folderPath = currentPath ? `${currentPath}/${folderName}` : folderName;
+			
+			// Upload all files to the specified folder
+			for (const file of files) {
+				await uploadFile(selectedBucket.name, file, folderPath, userPermissions);
+			}
+			
 			await loadFiles();
+			setShowFolderUpload(false);
 		} catch (error) {
-			console.error('Failed to create folder:', error);
-			setError('Failed to create folder');
+			console.error('Failed to upload files to folder:', error);
+			setError(`Failed to upload files to folder "${folderName}"`);
 		} finally {
 			setIsLoading(false);
 		}
@@ -293,7 +306,7 @@ export default function FilesPage() {
 							onUpload={() => setShowUpload(true)}
 							onDelete={handleDelete}
 							onDownload={handleDownload}
-							onCreateFolder={handleCreateFolder}
+							onFolderUpload={() => setShowFolderUpload(true)}
 							canWrite={selectedBucket ? canWriteToBucket(selectedBucket.name) : false}
 							canDelete={selectedBucket ? canDeleteFromBucket(selectedBucket.name) : false}
 						/>
@@ -330,6 +343,15 @@ export default function FilesPage() {
 					<FileUpload
 						onUpload={handleUpload}
 						onClose={() => setShowUpload(false)}
+						isLoading={isLoading}
+					/>
+				)}
+
+				{/* Folder Upload Modal */}
+				{showFolderUpload && (
+					<FolderUpload
+						onUpload={handleFolderUpload}
+						onClose={() => setShowFolderUpload(false)}
 						isLoading={isLoading}
 					/>
 				)}
