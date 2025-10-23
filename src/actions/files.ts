@@ -84,7 +84,7 @@ export function serializePermissionsForBackend(userPermissions: UserPermissions)
   };
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 // Temporary debug logs
 console.log('🌐 API_BASE_URL being used:', API_BASE_URL);
@@ -93,12 +93,12 @@ function getAuthHeaders(userPermissions?: UserPermissions): Record<string, strin
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  
+
   // Temporarily comment out auth header to test if it's causing CORS issues
   // if (keycloak.token) {
   //   headers['Authorization'] = `Bearer ${keycloak.token}`;
   // }
-  
+
   // Temporarily comment out custom headers to fix CORS issues
   // Add bucket permissions to headers for backend validation
   // if (userPermissions) {
@@ -107,19 +107,19 @@ function getAuthHeaders(userPermissions?: UserPermissions): Record<string, strin
   //   headers['X-Writable-Buckets'] = serialized.writableBuckets;
   //   headers['X-User-Permissions'] = serialized.fullPermissions;
   // }
-  
+
   return headers;
 }
 
 // Helper function to get auth headers for FormData requests
 function getAuthHeadersForFormData(userPermissions?: UserPermissions): Record<string, string> {
   const headers: Record<string, string> = {};
-  
+
   // Temporarily comment out auth header to test if it's causing CORS issues
   // if (keycloak.token) {
   //   headers['Authorization'] = `Bearer ${keycloak.token}`;
   // }
-  
+
   // Temporarily comment out custom headers to fix CORS issues
   // Add bucket permissions to headers for backend validation
   // if (userPermissions) {
@@ -128,7 +128,7 @@ function getAuthHeadersForFormData(userPermissions?: UserPermissions): Record<st
   //   headers['X-Writable-Buckets'] = serialized.writableBuckets;
   //   headers['X-User-Permissions'] = serialized.fullPermissions;
   // }
-  
+
   return headers;
 }
 
@@ -136,11 +136,11 @@ function getAuthHeadersForFormData(userPermissions?: UserPermissions): Record<st
 export async function getDatasets(userPermissions?: UserPermissions): Promise<Dataset[]> {
   console.log('🔍 Fetching datasets from:', `${API_BASE_URL}/files/datasets`);
   console.log('🔐 User permissions:', userPermissions);
-  
+
   try {
     const headers = getAuthHeaders(userPermissions);
     console.log('📡 Request headers:', headers);
-    
+
     const response = await fetch(`${API_BASE_URL}/files/datasets`, {
       method: 'GET',
       headers,
@@ -155,7 +155,7 @@ export async function getDatasets(userPermissions?: UserPermissions): Promise<Da
 
     const data = await response.json();
     console.log('📊 Raw API response:', data);
-    
+
     let datasets: Dataset[];
     if (data.datasets && Array.isArray(data.datasets)) {
       datasets = data.datasets.map((dataset: any) => ({
@@ -169,18 +169,18 @@ export async function getDatasets(userPermissions?: UserPermissions): Promise<Da
       console.warn('Unexpected API response format:', data);
       datasets = [];
     }
-    
+
     console.log('✅ Processed datasets:', datasets);
-    
+
     // Filter datasets based on user permissions
     if (userPermissions) {
-      const filtered = datasets.filter(dataset => 
+      const filtered = datasets.filter(dataset =>
         userPermissions.canReadFromBucket(dataset.name)
       );
       console.log('🔒 Filtered datasets based on permissions:', filtered);
       return filtered;
     }
-    
+
     return datasets;
   } catch (error) {
     console.error('❌ Error fetching datasets:', error);
@@ -208,7 +208,7 @@ export async function browseBucket(bucket: string, userPermissions?: UserPermiss
     }
 
     const data = await response.json();
-    
+
     // Handle new API response format with immediateItems
     if (data.immediateItems && Array.isArray(data.immediateItems)) {
       return data.immediateItems.map((item: any) => ({
@@ -218,7 +218,7 @@ export async function browseBucket(bucket: string, userPermissions?: UserPermiss
         modified: item.lastModified || new Date().toISOString()
       }));
     }
-    
+
     // Handle legacy API response format with items array
     if (data.items && Array.isArray(data.items)) {
       return data.items.map((item: any) => ({
@@ -241,8 +241,8 @@ export async function browseBucket(bucket: string, userPermissions?: UserPermiss
 
 // 3. Explore deep folder structure (MinIO API)
 export async function exploreFolder(
-  bucket: string, 
-  path: string, 
+  bucket: string,
+  path: string,
   userPermissions?: UserPermissions
 ): Promise<FolderExploration> {
   if (userPermissions && !userPermissions.canReadFromBucket(bucket)) {
@@ -266,13 +266,13 @@ export async function exploreFolder(
     }
 
     const data = await response.json();
-    
+
     // Handle the new API response format
     if (data.immediateItems && Array.isArray(data.immediateItems)) {
       // Separate folders and files from immediateItems
       const folders: FileItem[] = [];
       const files: FileItem[] = [];
-      
+
       data.immediateItems.forEach((item: any) => {
         const fileItem: FileItem = {
           type: item.type as 'file' | 'folder',
@@ -280,21 +280,21 @@ export async function exploreFolder(
           size: item.size || 0,
           modified: item.lastModified || new Date().toISOString()
         };
-        
+
         if (item.type === 'folder') {
           folders.push(fileItem);
         } else {
           files.push(fileItem);
         }
       });
-      
+
       return {
         path: data.currentPath || path,
         folders,
         files
       };
     }
-    
+
     // Fallback to old format for backward compatibility
     return {
       path: data.path || path,
@@ -309,8 +309,8 @@ export async function exploreFolder(
 
 // 4. Read file (returns parsed content) (MinIO API)
 export async function readFile(
-  bucket: string, 
-  filename: string, 
+  bucket: string,
+  filename: string,
   userPermissions?: UserPermissions
 ): Promise<any> {
   if (userPermissions && !userPermissions.canReadFromBucket(bucket)) {
@@ -347,8 +347,8 @@ export async function readFile(
 
 // 5. Download file (binary download) (MinIO API)
 export async function downloadFile(
-  bucket: string, 
-  filename: string, 
+  bucket: string,
+  filename: string,
   userPermissions?: UserPermissions
 ): Promise<Blob> {
   if (userPermissions && !userPermissions.canReadFromBucket(bucket)) {
@@ -380,21 +380,21 @@ export async function downloadFile(
 
 // Helper function to trigger file download in browser
 export async function downloadFileAndSave(
-  bucket: string, 
-  filename: string, 
+  bucket: string,
+  filename: string,
   userPermissions?: UserPermissions
 ): Promise<void> {
   try {
     const blob = await downloadFile(bucket, filename, userPermissions);
-    
+
     const url = window.URL.createObjectURL(blob);
-    
+
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
-    
+
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   } catch (error) {
@@ -438,7 +438,7 @@ export async function uploadFile(
     }
 
     const data = await response.json();
-    
+
     return {
       uploaded: true,
       path: data.object || `${path}/${file.name}`,
@@ -452,8 +452,8 @@ export async function uploadFile(
 
 // 7. File metadata / stat (MinIO API)
 export async function getFileMetadata(
-  bucket: string, 
-  filename: string, 
+  bucket: string,
+  filename: string,
   userPermissions?: UserPermissions
 ): Promise<FileMetadata> {
   if (userPermissions && !userPermissions.canReadFromBucket(bucket)) {
@@ -486,7 +486,7 @@ export async function getFileMetadata(
 export async function getBuckets(userPermissions?: UserPermissions): Promise<Bucket[]> {
   try {
     const datasets = await getDatasets(userPermissions);
-    
+
     // Convert datasets to legacy bucket format
     return datasets.map(dataset => ({
       name: dataset.name,
@@ -511,25 +511,25 @@ export async function getFiles(bucketName: string, path: string = '', userPermis
 
   try {
     let files: FileItem[] = [];
-    
+
     if (path) {
       // Use explore folder API for deeper paths
       const exploration = await exploreFolder(bucketName, path, userPermissions);
       files = [
-        ...(exploration.folders || []), 
+        ...(exploration.folders || []),
         ...(exploration.files || [])
       ];
     } else {
       // Use browse bucket API for root level
       files = await browseBucket(bucketName, userPermissions);
     }
-    
+
     // Ensure files is always an array
     if (!Array.isArray(files)) {
       console.warn('Files is not an array, defaulting to empty array:', files);
       files = [];
     }
-    
+
     // Convert to legacy format
     return files.map(file => ({
       name: file.name,
@@ -613,8 +613,8 @@ export async function createFolder(bucketName: string, folderPath: string, userP
 
 // Get file preview/metadata - Enhanced version using the new backend
 export async function getFilePreview(
-  bucketName: string, 
-  filePath: string, 
+  bucketName: string,
+  filePath: string,
   userPermissions?: UserPermissions,
   options: {
     preview?: boolean;
@@ -635,10 +635,10 @@ export async function getFilePreview(
   try {
     const url = new URL(`${API_BASE_URL}/files/read/${encodeURIComponent(bucketName)}`);
     url.searchParams.set('file', filePath);
-    
+
     // Set preview mode by default for better performance
     url.searchParams.set('preview', options.preview !== false ? 'true' : 'false');
-    
+
     // Add all the enhanced options
     if (options.format) url.searchParams.set('format', options.format);
     if (options.quality) url.searchParams.set('quality', options.quality.toString());
@@ -648,7 +648,7 @@ export async function getFilePreview(
     if (options.maxSize) url.searchParams.set('maxSize', options.maxSize.toString());
     if (options.maxResponseSize) url.searchParams.set('maxResponseSize', options.maxResponseSize.toString());
     if (options.compress) url.searchParams.set('compress', 'true');
-    
+
     // Enable gzip compression for large responses
     url.searchParams.set('gzip', 'auto');
 
@@ -678,20 +678,20 @@ export async function getFilePreview(
 // Helper function to format file sizes
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
-  
+
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 // Helper function to get file type icon
 export function getFileTypeIcon(fileName: string, isFolder: boolean): string {
   if (isFolder) return '📁';
-  
+
   const extension = fileName.split('.').pop()?.toLowerCase();
-  
+
   switch (extension) {
     case 'pdf': return '📄';
     case 'doc':
