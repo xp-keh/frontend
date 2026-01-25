@@ -1,3 +1,5 @@
+"use server";
+
 import keycloak from '@/lib/keycloak';
 
 // API interfaces matching the MinIO backend contract
