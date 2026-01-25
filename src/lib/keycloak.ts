@@ -1,7 +1,7 @@
 import Keycloak from 'keycloak-js';
 
 const keycloakConfig = {
-  url: process.env.NEXT_PUBLIC_KEYCLOAK_URL || 'http://localhost:7080/',
+  url: process.env.NEXT_PUBLIC_KEYCLOAK_URL || 'https://sso.knowaxis.com/',
   realm: process.env.NEXT_PUBLIC_KEYCLOAK_REALM || 'data-station',
   clientId: process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID || 'data-station-client',
 };
